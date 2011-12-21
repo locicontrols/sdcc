@@ -959,7 +959,7 @@ positionRegs (symbol * result, symbol * opsym)
   int i, j = 0, shared = 0;
   int change = 0;
 
-  D (D_ALLOC, ("positionRegs: on result %p opsum %p line %u\n", result, opsym, lineno));
+  D (D_ALLOC, ("positionRegs: on result %p opsym %p line %u\n", result, opsym, lineno));
 
   /* if the result has been spilt then cannot share */
   if (opsym->isspilt)
@@ -967,6 +967,7 @@ positionRegs (symbol * result, symbol * opsym)
 again:
   shared = 0;
   /* first make sure that they actually share */
+
   for (i = 0; i < count; i++)
     {
       for (j = 0; j < count; j++)
@@ -1358,7 +1359,7 @@ fillGaps ()
                 continue;
               if (SKIP_IC (ic))
                 continue;
-              if (!IS_ASSIGN_ICODE (ic))
+              if (IS_ASSIGN_ICODE (ic))
                 continue;
 
               /* if result is assigned to registers */
@@ -1686,9 +1687,11 @@ packRegsForAssign (iCode * ic, eBBlock * ebp)
   D (D_ALLOC, ("packRegsForAssign: running on ic %p\n", ic));
 
   if (!IS_ITEMP (IC_RIGHT (ic)) || OP_SYMBOL (IC_RIGHT (ic))->isind || OP_LIVETO (IC_RIGHT (ic)) > ic->seq)
-    {
-      return 0;
-    }
+    return 0;
+  
+  /* Avoid having multiple named address spaces in one iCode. */
+  if (IS_SYMOP (IC_RESULT (ic)) && SPEC_ADDRSPACE (OP_SYMBOL (IC_RESULT (ic))->etype))
+    return 0;
 
   /* find the definition of iTempNN scanning backwards if we find a
      a use of the true symbol in before we find the definition then
@@ -1749,7 +1752,6 @@ packRegsForAssign (iCode * ic, eBBlock * ebp)
               dic = NULL;
               break;
             }
-
         }
     }
 

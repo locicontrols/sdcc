@@ -783,6 +783,12 @@ newiTempOperand (sym_link * type, char throwType)
       SPEC_SCLS (itmp->etype) = S_REGISTER;
       SPEC_OCLS (itmp->etype) = reg;
     }
+    
+  /* iTemps always live in the default address space */
+  if (IS_DECL (itmp->type))
+    DCL_PTR_ADDRSPACE (itmp->type) = 0;
+  else
+    SPEC_ADDRSPACE (itmp->etype) = 0;
 
   op->svt.symOperand = itmp;
   op->key = itmp->key = ++operandKey;
@@ -1129,10 +1135,10 @@ getBuiltinParms (iCode * fic, int *pcount, operand ** parms)
   return ic;
 }
 
-/* This seems to be a GCC 4.6.[01] bug
+/* This seems to be a GCC 4.6.[01] bug on i386 Linux and mingw platforms
  * see http://sourceforge.net/tracker/?func=detail&aid=3285611&group_id=599&atid=300599
  */
-#if defined(__linux__) && defined(__i386__) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
+#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 #endif
@@ -1391,10 +1397,10 @@ operandOperation (operand * left, operand * right, int op, sym_link * type)
 
   return retval;
 }
-/* This seems to be a GCC 4.6.[01] bug
+/* This seems to be a GCC 4.6.[01] bug on i386 Linux and mingw platforms
  * see http://sourceforge.net/tracker/?func=detail&aid=3285611&group_id=599&atid=300599
  */
-#if defined(__linux__) && defined(__i386__) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
+#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
 #pragma GCC pop_options
 #endif
 
@@ -2229,6 +2235,7 @@ geniCodeAdd (operand * left, operand * right, RESULT_TYPE resultType, int lvl)
 {
   iCode *ic;
   sym_link *resType;
+  unsigned int nBytes;
   operand *size;
   int isarray = 0;
   bool indexUnsigned;
@@ -2247,10 +2254,13 @@ geniCodeAdd (operand * left, operand * right, RESULT_TYPE resultType, int lvl)
   if (IS_PTR (ltype) || IS_ARRAY (ltype))
     {
       isarray = left->isaddr;
+      nBytes = getSize (ltype->next);
+      if (nBytes == 0)
+        werror (E_UNKNOWN_SIZE, IS_SYMOP (left) ? OP_SYMBOL (left)->name : "<no name>");
       // there is no need to multiply with 1
-      if (getSize (ltype->next) != 1)
+      if (nBytes != 1)
         {
-          size = operandFromLit (getSize (ltype->next));
+          size = operandFromLit (nBytes);
           SPEC_USIGN (getSpec (operandType (size))) = 1;
           indexUnsigned = IS_UNSIGNED (getSpec (operandType (right)));
           right = geniCodeMultiply (right, size, resultType);
@@ -2786,6 +2796,16 @@ geniCodeDerefPtr (operand * op, int lvl)
   if (!isLvaluereq (lvl))
     op = geniCodeRValue (op, TRUE);
 
+  if (IS_DECL (rtype))
+    {
+      DCL_PTR_ADDRSPACE (rtype) = 0;
+      DCL_PTR_VOLATILE (rtype) = 0;
+    }
+  else
+    {
+      SPEC_ADDRSPACE (rtype) = 0;
+      SPEC_VOLATILE (rtype) = 0;
+    }
   setOperandType (op, rtype);
 
   return op;

@@ -34,13 +34,13 @@ EXEEXT          = @EXEEXT@
 
 VPATH           = @srcdir@
 
-CPPFLAGS        = @CPPFLAGS@ -DSDCDB -DNOICE -DINDEXLIB -I. -I$(srcdir) -I$(srcdir)/../asxxsrc -I$(srcdir)/../../support/Util
+CPPFLAGS        = @CPPFLAGS@ -DSDCDB -DNOICE -DINDEXLIB -I. -I$(srcdir) -I$(srcdir)/../asxxsrc -I$(srcdir)/../../support/util
 CFLAGS          = @CFLAGS@ @WALL_FLAG@ $(CPPFLAGS)
 LDFLAGS         = @LDFLAGS@ -lm
 
 OBJDIR = obj
 
-UTILLIB = $(srcdir)/../../support/Util
+UTILLIB = $(srcdir)/../../support/util
 UTILSRC = dbuf.c dbuf_string.c
 UTILLIBOBJS = $(UTILSRC:%.c=$(OBJDIR)/%.o)
 
@@ -54,6 +54,8 @@ OBJS = $(SRC:%.c=$(OBJDIR)/%.o)
 ASSOURCES = $(SRC) $(ASXXLIBSRC:%.c=$(ASXXLIB)/%.c) $(UTILSRC:%.c=$(UTILLIB)/%.c)
 
 ASOBJECTS = $(OBJS) $(ASXXLIBOBJS) $(UTILLIBOBJS)
+
+$(ASOBJECTS) : $(ASXXLIB)/asxxxx.h $(ASXXLIB)/sdas.h
 
 ASX = $(top_builddir)/bin/sdasrab$(EXEEXT)
 DEST = $(DESTDIR)$(bindir)/sdasrab$(EXEEXT)

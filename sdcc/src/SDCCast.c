@@ -772,20 +772,6 @@ processParms (ast * func, value * defParm, ast ** actParm, int *parmNumber,     
   else
     functype = func->ftype;
 
-  /* if the function is being called via a pointer &  */
-  /* it has not been defined reentrant then we cannot */
-  /* have parameters                                  */
-  /* PIC16 port can... */
-  if (!TARGET_IS_PIC16)
-    {
-      if (func->type != EX_VALUE && !IFFUNC_ISREENT (functype) && !options.stackAuto)
-        {
-          werror (E_NONRENT_ARGS);
-          fatalError++;
-          return 1;
-        }
-    }
-
   /* if defined parameters ended but actual parameters */
   /* exist and this is not defined as a variable arg   */
   if (!defParm && *actParm && !IFFUNC_HASVARARGS (functype))
@@ -928,7 +914,8 @@ processParms (ast * func, value * defParm, ast ** actParm, int *parmNumber,     
     }
 
   /* if the parameter is castable then add the cast */
-  if (compareType (defParm->type, (*actParm)->ftype) < 0)
+  if ((IS_ARRAY((*actParm)->ftype) && IS_PTR(defParm->type)) ||
+      (compareType (defParm->type, (*actParm)->ftype) < 0))
     {
       ast *pTree;
 
@@ -2494,6 +2481,7 @@ gatherImplicitVariables (ast * tree, ast * block)
 
           assignee->type = copyLinkChain (TTYPE (dtr));
           assignee->etype = getSpec (assignee->type);
+          SPEC_ADDRSPACE (assignee->etype) = 0;
           SPEC_SCLS (assignee->etype) = S_AUTO;
           SPEC_OCLS (assignee->etype) = NULL;
           SPEC_EXTR (assignee->etype) = 0;
@@ -2604,7 +2592,11 @@ checkPtrCast (sym_link * newType, sym_link * orgType, bool implicit)
         }
       else                      // from a pointer to a pointer
         {
-          if (IS_GENPTR (newType) && IS_VOID (newType->next))
+          if (implicit && getAddrspace (newType->next) != getAddrspace (orgType->next))
+            {
+              errors += werror (E_INCOMPAT_PTYPES);
+            }
+          else if (IS_GENPTR (newType) && IS_VOID (newType->next))
             {                   // cast to void* is always allowed
             }
           else if (IS_GENPTR (orgType) && IS_VOID (orgType->next))
@@ -2917,6 +2909,7 @@ decorateType (ast * tree, RESULT_TYPE resultType)
         {
           setOClass (LTYPE (tree), TETYPE (tree));
           SPEC_SCLS (TETYPE (tree)) = sclsFromPtr (LTYPE (tree));
+          SPEC_ADDRSPACE (TETYPE (tree)) = DCL_PTR_ADDRSPACE (LTYPE (tree));
         }
       /* This breaks with extern declarations, bit-fields, and perhaps other */
       /* cases (gcse). Let's leave this optimization disabled for now and   */
@@ -3080,9 +3073,14 @@ decorateType (ast * tree, RESULT_TYPE resultType)
       /*----------------------------*/
       /*  address of                */
       /*----------------------------*/
-      p = newLink (DECLARATOR);
+      if (IS_FUNC (LTYPE (tree)))
+        {
+          // this ought to be ignored
+          return (tree->left);
+        }
+
       /* if bit field then error */
-      if (IS_BITFIELD (tree->left->etype) || (IS_BITVAR (tree->left->etype) && (TARGET_IS_MCS51 || TARGET_IS_XA51 || TARGET_IS_DS390)))
+      if (IS_BITFIELD (tree->left->etype) || (IS_BITVAR (tree->left->etype) && TARGET_MCS51_LIKE))
         {
           werrorfl (tree->filename, tree->lineno, E_ILLEGAL_ADDR, "address of bit variable");
           goto errorTreeReturn;
@@ -3092,12 +3090,6 @@ decorateType (ast * tree, RESULT_TYPE resultType)
         {
           werrorfl (tree->filename, tree->lineno, E_ILLEGAL_ADDR, "address of register variable");
           goto errorTreeReturn;
-        }
-
-      if (IS_FUNC (LTYPE (tree)))
-        {
-          // this ought to be ignored
-          return (tree->left);
         }
 
       if (IS_LITERAL (LTYPE (tree)))
@@ -3111,6 +3103,8 @@ decorateType (ast * tree, RESULT_TYPE resultType)
           werrorfl (tree->filename, tree->lineno, E_LVALUE_REQUIRED, "address of");
           goto errorTreeReturn;
         }
+
+      p = newLink (DECLARATOR);
       if (!LETYPE (tree))
         DCL_TYPE (p) = POINTER;
       else if (SPEC_SCLS (LETYPE (tree)) == S_CODE)
@@ -4020,7 +4014,6 @@ decorateType (ast * tree, RESULT_TYPE resultType)
                   break;
                 default:
                   gptype = 0;
-
                   if (TARGET_IS_PIC16 && (SPEC_SCLS (sym->etype) == S_FIXED))
                     gptype = GPTYPE_NEAR;
                 }
@@ -4568,7 +4561,11 @@ decorateType (ast * tree, RESULT_TYPE resultType)
 
     case ':':
       /* if they don't match we have a problem */
-      if ((compareType (LTYPE (tree), RTYPE (tree)) == 0) && (compareType (RTYPE (tree), LTYPE (tree)) == 0))
+
+      if ((compareType (LTYPE (tree), RTYPE (tree)) == 0) &&
+          (compareType (RTYPE (tree), LTYPE (tree)) == 0) &&
+          !(IS_ARRAY(LTYPE (tree)) && IS_INTEGRAL(RTYPE (tree))) &&
+          !(IS_ARRAY(RTYPE (tree)) && IS_INTEGRAL(LTYPE (tree))))
         {
           werrorfl (tree->filename, tree->lineno, E_TYPE_MISMATCH, "conditional operator", " ");
           goto errorTreeReturn;
@@ -4810,8 +4807,9 @@ decorateType (ast * tree, RESULT_TYPE resultType)
               reverseParms (tree->right);
             }
 
-          TTYPE (tree) = functype->next;
+          TTYPE (tree) = copyLinkChain(functype->next);
           TETYPE (tree) = getSpec (TTYPE (tree));
+          SPEC_SCLS (TETYPE (tree)) = S_FIXED;
         }
       return tree;
 
@@ -6229,7 +6227,6 @@ inlineAddDecl (symbol * sym, ast * block, int addSymTab, int toFront)
 
       if (addSymTab)
         addSym (SymbolTab, sym, sym->name, sym->level, sym->block, 0);
-
     }
 }
 
@@ -6248,10 +6245,16 @@ inlineTempVar (sym_link * type, int level)
   SPEC_OCLS (sym->etype) = NULL;
   SPEC_EXTR (sym->etype) = 0;
   SPEC_STAT (sym->etype) = 0;
-  if IS_SPEC
-    (sym->type) SPEC_VOLATILE (sym->type) = 0;
+  if (IS_SPEC (sym->type))
+    {
+      SPEC_VOLATILE (sym->type) = 0;
+      SPEC_ADDRSPACE (sym->type) = 0;
+    }
   else
-    DCL_PTR_VOLATILE (sym->type) = 0;
+    {
+      DCL_PTR_VOLATILE (sym->type) = 0;
+      DCL_PTR_ADDRSPACE (sym->type) = 0;
+    }
   SPEC_ABSA (sym->etype) = 0;
 
   return sym;
@@ -6662,6 +6665,7 @@ skipall:
   cleanUpLevel (LabelTab, 0);
   cleanUpBlock (StructTab, 1);
   cleanUpBlock (TypedefTab, 1);
+  cleanUpBlock (AddrspaceTab, 1);
 
   xstack->syms = NULL;
   istack->syms = NULL;
@@ -6825,7 +6829,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
     {
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*        array node          */
+    /*        array node          */
     /*----------------------------*/
     case '[':
       fprintf (outfile, "ARRAY_OP (%p) type (", tree);
@@ -6837,7 +6841,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*      struct/union          */
+    /*      struct/union          */
     /*----------------------------*/
     case '.':
       fprintf (outfile, "STRUCT_ACCESS (%p) type (", tree);
@@ -6849,7 +6853,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*    struct/union pointer    */
+    /*    struct/union pointer    */
     /*----------------------------*/
     case PTR_OP:
       fprintf (outfile, "PTR_ACCESS (%p) type (", tree);
@@ -6861,7 +6865,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*  ++/-- operation           */
+    /*  ++/-- operation           */
     /*----------------------------*/
     case INC_OP:
       if (tree->left)
@@ -6889,7 +6893,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*  bitwise and               */
+    /*  bitwise and               */
     /*----------------------------*/
     case '&':
       if (tree->right)
@@ -6911,7 +6915,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
       return;
 
     /*----------------------------*/
-      /*  bitwise or                */
+    /*  bitwise or                */
     /*----------------------------*/
     case '|':
       fprintf (outfile, "OR (%p) type (", tree);
@@ -6923,7 +6927,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*  bitwise xor               */
+    /*  bitwise xor               */
     /*----------------------------*/
     case '^':
       fprintf (outfile, "XOR (%p) type (", tree);
@@ -6935,7 +6939,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*  division                  */
+    /*  division                  */
     /*----------------------------*/
     case '/':
       fprintf (outfile, "DIV (%p) type (", tree);
@@ -6947,7 +6951,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*            modulus         */
+    /*            modulus         */
     /*----------------------------*/
     case '%':
       fprintf (outfile, "MOD (%p) type (", tree);
@@ -6959,7 +6963,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*  address dereference       */
+    /*  address dereference       */
     /*----------------------------*/
     case '*':                  /* can be unary  : if right is null then unary operation */
       if (!tree->right)
@@ -6972,7 +6976,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
         }
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*      multiplication        */
+    /*      multiplication        */
     /*----------------------------*/
       fprintf (outfile, "MULT (%p) type (", tree);
       printTypeChain (tree->ftype, outfile);
@@ -6984,7 +6988,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*    unary '+' operator      */
+    /*    unary '+' operator      */
     /*----------------------------*/
     case '+':
       /* if unary plus */
@@ -6999,7 +7003,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
         {
       /*------------------------------------------------------------------*/
       /*----------------------------*/
-          /*      addition              */
+      /*      addition              */
       /*----------------------------*/
           fprintf (outfile, "ADD (%p) type (", tree);
           printTypeChain (tree->ftype, outfile);
@@ -7011,7 +7015,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*      unary '-'             */
+    /*      unary '-'             */
     /*----------------------------*/
     case '-':                  /* can be unary   */
       if (!tree->right)
@@ -7025,7 +7029,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
         {
       /*------------------------------------------------------------------*/
       /*----------------------------*/
-          /*      subtraction           */
+      /*      subtraction           */
       /*----------------------------*/
           fprintf (outfile, "SUB (%p) type (", tree);
           printTypeChain (tree->ftype, outfile);
@@ -7037,7 +7041,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*    complement              */
+    /*    complement              */
     /*----------------------------*/
     case '~':
       fprintf (outfile, "COMPL (%p) type (", tree);
@@ -7048,7 +7052,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*           not              */
+    /*           not              */
     /*----------------------------*/
     case '!':
       fprintf (outfile, "NOT (%p) type (", tree);
@@ -7059,7 +7063,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*           shift            */
+    /*           shift            */
     /*----------------------------*/
     case RRC:
       fprintf (outfile, "RRC (%p) type (", tree);
@@ -7131,7 +7135,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*         casting            */
+    /*         casting            */
     /*----------------------------*/
     case CAST:                 /* change the type   */
       fprintf (outfile, "CAST (%p) from type (", tree);
@@ -7161,7 +7165,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*     comparison operators   */
+    /*     comparison operators   */
     /*----------------------------*/
     case '>':
       fprintf (outfile, "GT(>) (%p) type (", tree);
@@ -7211,7 +7215,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
       ast_print (tree->right, outfile, indent + 2);
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*             sizeof         */
+    /*             sizeof         */
     /*----------------------------*/
     case SIZEOF:               /* evaluate wihout code generation */
       fprintf (outfile, "SIZEOF %d\n", (getSize (tree->right->ftype)));
@@ -7219,7 +7223,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /* conditional operator  '?'  */
+    /* conditional operator  '?'  */
     /*----------------------------*/
     case '?':
       fprintf (outfile, "QUEST(?) (%p) type (", tree);
@@ -7239,7 +7243,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*    assignment operators    */
+    /*    assignment operators    */
     /*----------------------------*/
     case MUL_ASSIGN:
       fprintf (outfile, "MULASS(*=) (%p) type (", tree);
@@ -7299,7 +7303,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*    -= operator             */
+    /*    -= operator             */
     /*----------------------------*/
     case SUB_ASSIGN:
       fprintf (outfile, "SUBASS(-=) (%p) type (", tree);
@@ -7311,7 +7315,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*          += operator       */
+    /*          += operator       */
     /*----------------------------*/
     case ADD_ASSIGN:
       fprintf (outfile, "ADDASS(+=) (%p) type (", tree);
@@ -7323,7 +7327,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*      straight assignemnt   */
+    /*      straight assignemnt   */
     /*----------------------------*/
     case '=':
       fprintf (outfile, "ASSIGN(=) (%p) type (", tree);
@@ -7335,7 +7339,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*      comma operator        */
+    /*      comma operator        */
     /*----------------------------*/
     case ',':
       fprintf (outfile, "COMMA(,) (%p) type (", tree);
@@ -7347,7 +7351,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*       function call        */
+    /*       function call        */
     /*----------------------------*/
     case CALL:
     case PCALL:
@@ -7369,7 +7373,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*     return statement       */
+    /*     return statement       */
     /*----------------------------*/
     case RETURN:
       fprintf (outfile, "RETURN (%p) type (", tree);
@@ -7383,7 +7387,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*     label statement        */
+    /*     label statement        */
     /*----------------------------*/
     case LABEL:
       fprintf (outfile, "LABEL (%p)\n", tree);
@@ -7393,7 +7397,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /*     switch statement       */
+    /*     switch statement       */
     /*----------------------------*/
     case SWITCH:
       {
@@ -7414,7 +7418,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /* ifx Statement              */
+    /* ifx Statement              */
     /*----------------------------*/
     case IFX:
       fprintf (outfile, "IF (%p) \n", tree);
@@ -7433,7 +7437,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
       return;
 
     /*----------------------------*/
-      /* goto Statement              */
+    /* goto Statement              */
     /*----------------------------*/
     case GOTO:
       fprintf (outfile, "GOTO (%p) \n", tree);
@@ -7443,7 +7447,7 @@ ast_print (ast * tree, FILE * outfile, int indent)
 
     /*------------------------------------------------------------------*/
     /*----------------------------*/
-      /* for Statement              */
+    /* for Statement              */
     /*----------------------------*/
     case FOR:
       fprintf (outfile, "FOR (%p) \n", tree);
@@ -7512,12 +7516,12 @@ astErrors (ast * t)
  * >   info node:   (gcc-4.1)Offsetof
  * >
  * >      primary:
- * >      	"__builtin_offsetof" "(" `typename' "," offsetof_member_designator ")"
+ * >        "__builtin_offsetof" "(" `typename' "," offsetof_member_designator ")"
  * >
  * >      offsetof_member_designator:
- * >      	  `identifier'
- * >      	| offsetof_member_designator "." `identifier'
- * >      	| offsetof_member_designator "[" `expr' "]"
+ * >          `identifier'
+ * >        | offsetof_member_designator "." `identifier'
+ * >        | offsetof_member_designator "[" `expr' "]"
  * >
  * >  This extension is sufficient such that
  * >

@@ -124,6 +124,7 @@ extern PORT r2k_port;
 
 static builtins _z80_builtins[] = {
   {"__builtin_memcpy", "vg*", 3, {"vg*", "vg*", "ui"}},
+  {"__builtin_memset", "vg*", 3, {"vg*", "i", "ui"}},
   {NULL, NULL, 0, {NULL}}
 };
 
@@ -802,8 +803,8 @@ PORT z80_port = {
   {                             /* Assembler */
    _z80AsmCmd,
    NULL,
-   "-plosgffwzc",               /* Options with debug */
-   "-plosgffwz",                /* Options without debug */
+   "-plosgffwc",                /* Options with debug */
+   "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
   {                             /* Linker */
@@ -926,8 +927,8 @@ PORT z180_port = {
   {                             /* Assembler */
    _z80AsmCmd,
    NULL,
-   "-plosgffwzc",               /* Options with debug */
-   "-plosgffwz",                /* Options without debug */
+   "-plosgffwc",                /* Options with debug */
+   "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
   {                             /* Linker */
@@ -1051,8 +1052,8 @@ PORT gbz80_port = {
   {                             /* Assembler */
    _gbAsmCmd,
    NULL,
-   "-plosgffwzc",               /* Options with debug */
-   "-plosgffwz",                /* Options without debug */
+   "-plosgffwc",                /* Options with debug */
+   "-plosgffw",                 /* Options without debug */
    0,
    ".asm",
    NULL                         /* no do_assemble function */
@@ -1178,8 +1179,8 @@ PORT r2k_port = {
   {                             /* Assembler */
    _r2kAsmCmd,
    NULL,
-   "-plosgffwzc",               /* Options with debug */
-   "-plosgffwz",                /* Options without debug */
+   "-plosgffwc",                /* Options with debug */
+   "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
   {                             /* Linker */
