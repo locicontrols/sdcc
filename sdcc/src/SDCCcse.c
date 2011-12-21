@@ -530,7 +530,7 @@ DEFSETFUNC (findPrevIc)
   /* if iCodes are not the same */
   /* see the operands maybe interchanged */
   if (ic->op == cdp->diCode->op &&
-      IS_ASSOCIATIVE(ic) &&
+      IS_COMMUTATIVE (ic) &&
       isOperandEqual (IC_LEFT (ic), IC_RIGHT (cdp->diCode)) &&
       isOperandEqual (IC_RIGHT (ic), IC_LEFT (cdp->diCode)))
     {
@@ -823,6 +823,11 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
           IC_RESULT (ic) = operandFromOperand (IC_RESULT (ic));
           IC_RESULT (ic)->isaddr = 0;
           setOperandType (IC_RESULT (ic), operandType (IC_RIGHT (ic)));
+          if (IS_DECL (operandType (IC_RESULT (ic))))
+            {
+              DCL_PTR_VOLATILE (operandType (IC_RESULT (ic))) = 0;
+              DCL_PTR_ADDRSPACE (operandType (IC_RESULT (ic))) = 0;
+            }
           return;
         }
 

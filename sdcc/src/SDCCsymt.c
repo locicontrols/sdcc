@@ -89,6 +89,7 @@ bucket *StructTab[256];         /* the structure table  */
 bucket *TypedefTab[256];        /* the typedef   table  */
 bucket *LabelTab[256];          /* the Label     table  */
 bucket *enumTab[256];           /* enumerated    table  */
+bucket *AddrspaceTab[256];      /* the named address space table  */
 
 /*------------------------------------------------------------------*/
 /* initSymt () - initialises symbol table related stuff             */
@@ -773,6 +774,11 @@ mergeSpec (sym_link * dest, sym_link * src, const char *name)
   FUNC_REGBANK (dest) |= FUNC_REGBANK (src);
   FUNC_ISINLINE (dest) |= FUNC_ISINLINE (src);
 
+  if (SPEC_ADDRSPACE (src) && SPEC_ADDRSPACE (dest))
+    werror (E_TWO_OR_MORE_STORAGE_CLASSES, name);
+  if (SPEC_ADDRSPACE (src))
+    SPEC_ADDRSPACE (dest) = SPEC_ADDRSPACE (src);
+
   return dest;
 }
 
@@ -814,8 +820,14 @@ mergeDeclSpec (sym_link * dest, sym_link * src, const char *name)
   DCL_PTR_CONST (decl) |= SPEC_CONST (spec);
   DCL_PTR_VOLATILE (decl) |= SPEC_VOLATILE (spec);
   DCL_PTR_RESTRICT (decl) |= SPEC_RESTRICT (spec);
+  if (DCL_PTR_ADDRSPACE (decl) && SPEC_ADDRSPACE (spec) &&
+    strcmp (DCL_PTR_ADDRSPACE (decl)->name, SPEC_ADDRSPACE (spec)->name))
+    werror (E_SYNTAX_ERROR, yytext);
+  if (SPEC_ADDRSPACE (spec))
+    DCL_PTR_ADDRSPACE (decl) = SPEC_ADDRSPACE (spec);
 
   SPEC_CONST (spec) = SPEC_VOLATILE (spec) = SPEC_RESTRICT (spec) = 0;
+  SPEC_ADDRSPACE (spec) = 0;
 
   lnk = decl;
   while (lnk && !IS_SPEC (lnk->next))
@@ -945,6 +957,20 @@ newBoolLink ()
 
   p = newLink (SPECIFIER);
   SPEC_NOUN (p) = V_BIT;
+
+  return p;
+}
+
+/*------------------------------------------------------------------*/
+/* newVoidLink() - creates an void type                             */
+/*------------------------------------------------------------------*/
+sym_link *
+newVoidLink ()
+{
+  sym_link *p;
+
+  p = newLink (SPECIFIER);
+  SPEC_NOUN (p) = V_VOID;
 
   return p;
 }
@@ -1446,6 +1472,11 @@ compStructSize (int su, structdef * sdef)
   int bitOffset = 0;
   symbol *loop;
 
+  if (!sdef->fields)
+    {
+      werror (E_UNKNOWN_SIZE, sdef->tag);
+    }
+
   /* for the identifiers  */
   loop = sdef->fields;
   while (loop)
@@ -1683,6 +1714,7 @@ checkSClass (symbol * sym, int isProto)
       werrorfl (sym->fileDef, sym->lineDef, E_BAD_RESTRICT);
       SPEC_RESTRICT (sym->etype) = 0;
     }
+
   t = sym->type;
   while (t)
     {
@@ -1760,8 +1792,15 @@ checkSClass (symbol * sym, int isProto)
   if (IS_BITVAR (sym->etype) &&
       (SPEC_SCLS (sym->etype) != S_FIXED && SPEC_SCLS (sym->etype) != S_SBIT && SPEC_SCLS (sym->etype) != S_BIT))
     {
-      werror (E_BITVAR_STORAGE, sym->name);
-      SPEC_SCLS (sym->etype) = S_FIXED;
+      /* find out if this is the return type of a function */
+      t = sym->type;
+      while (t && t->next != sym->etype)
+        t = t->next;
+      if (t->next != sym->etype || !IS_FUNC (t))
+        {
+          werror (E_BITVAR_STORAGE, sym->name);
+          SPEC_SCLS (sym->etype) = S_FIXED;
+        }
     }
 
   /* if this is an automatic symbol */
@@ -1794,14 +1833,31 @@ checkSClass (symbol * sym, int isProto)
       SPEC_ABSA (sym->etype) = 0;
     }
 
+  if (sym->level && !IS_STATIC (sym->etype) && (IS_DECL (sym->type) ? DCL_PTR_ADDRSPACE (sym->type) : SPEC_ADDRSPACE (sym->type)) && (options.stackAuto || reentrant))
+    {
+      werror (E_AUTO_ADDRSPACE, sym->name);
+      if (IS_DECL (sym->type))
+        DCL_PTR_ADDRSPACE (sym->type) = 0;
+      else
+        SPEC_ADDRSPACE (sym->type) = 0;
+    }
+
   /* arrays & pointers cannot be defined for bits   */
   /* SBITS or SFRs or BIT                           */
   if ((IS_ARRAY (sym->type) || IS_PTR (sym->type)) &&
-      !IS_FUNCPTR (sym->type) &&
       (SPEC_NOUN (sym->etype) == V_BIT ||
        SPEC_NOUN (sym->etype) == V_SBIT || SPEC_NOUN (sym->etype) == V_BITFIELD || SPEC_NOUN (sym->etype) == V_BBITFIELD ||
        SPEC_SCLS (sym->etype) == S_SFR))
-    werror (E_BIT_ARRAY, sym->name);
+    {
+      /* find out if this is the return type of a function */
+      t = sym->type;
+      while (t && t->next != sym->etype)
+        t = t->next;
+      if (t->next != sym->etype || !IS_FUNC (t))
+        {
+          werror (E_BIT_ARRAY, sym->name);
+        }
+    }
 
   /* if this is a bit|sbit then set length & start  */
   if (SPEC_NOUN (sym->etype) == V_BIT || SPEC_NOUN (sym->etype) == V_SBIT)
@@ -1945,6 +2001,14 @@ cleanUpLevel (bucket ** table, int level)
     }
 }
 
+symbol *
+getAddrspace (sym_link *type)
+{
+  if (IS_DECL (type))
+    return (DCL_PTR_ADDRSPACE (type));
+  return (SPEC_ADDRSPACE (type));
+}
+
 /*------------------------------------------------------------------*/
 /* computeTypeOr - computes the resultant type from two types       */
 /*------------------------------------------------------------------*/
@@ -2043,12 +2107,12 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
 
       /* If NULL and another pointer, use the non-NULL pointer type. */
       /* Note that NULL can be defined as either 0 or (void *)0. */
-      if (IS_LITERAL (etype1) && 
+      if (IS_LITERAL (etype1) &&
           ((IS_PTR (type1) && IS_VOID (type1->next)) || IS_INTEGRAL (type1)) &&
           (floatFromVal (valFromType (etype1)) == 0) &&
           IS_PTR (type2))
         return copyLinkChain (type2);
-      else if (IS_LITERAL (etype2) && 
+      else if (IS_LITERAL (etype2) &&
                ((IS_PTR (type2) && IS_VOID (type2->next)) || IS_INTEGRAL (type2)) &&
                (floatFromVal (valFromType (etype2)) == 0) &&
                IS_PTR (type1))
@@ -2062,7 +2126,7 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
 
       /* Otherwise fall through to the general case */
     }
-  
+
 
   /* if one of them is a pointer or array then that prevails */
   if (IS_PTR (type1) || IS_ARRAY (type1))
@@ -2356,6 +2420,9 @@ comparePtrType (sym_link * dest, sym_link * src, bool bMustCast)
 {
   int res;
 
+  if (getAddrspace (src->next) != getAddrspace (dest->next))
+    bMustCast = 1;
+
   if (IS_VOID (src->next) && IS_VOID (dest->next))
     return bMustCast ? -1 : 1;
   if ((IS_VOID (src->next) && !IS_VOID (dest->next)) || (!IS_VOID (src->next) && IS_VOID (dest->next)))
@@ -2465,13 +2532,13 @@ compareType (sym_link * dest, sym_link * src)
   if (SPEC_NOUN (dest) != SPEC_NOUN (src))
     {
       if ((SPEC_USIGN (dest) == SPEC_USIGN (src)) &&
-		  IS_INTEGRAL (dest) && IS_INTEGRAL (src) &&
+          IS_INTEGRAL (dest) && IS_INTEGRAL (src) &&
           /* I would prefer
              bitsForType (dest) == bitsForType (src))
              instead of the next two lines, but the regression tests fail with
              them; I guess it's a problem with replaceCheaperOp  */
           (getSize (dest) == getSize (src)) &&
-		  (IS_BOOLEAN (dest) == IS_BOOLEAN (src)))
+          (IS_BOOLEAN (dest) == IS_BOOLEAN (src)))
         return 1;
       else if (IS_ARITHMETIC (dest) && IS_ARITHMETIC (src))
         return -1;

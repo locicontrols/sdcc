@@ -1,8 +1,443 @@
+2011-12-21 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* tests/gcc-torture-execute-pure-1.c,
+	  tests/gcc-torture-execute-string-opt-17.c,
+	  tests/gcc-torture-execute-pta-field-1.c,
+	  tests/gcc-torture-execute-string-opt-18.c,
+	  tests/gcc-torture-execute-struct-ini-1.c,
+	  tests/gcc-torture-execute-pta-field-2.c,
+	  tests/gcc-torture-execute-ptr-arith-1.c,
+	  tests/gcc-torture-execute-unroll-1.c,
+	  tests/gcc-torture-execute-struct-ini-2.c,
+	  tests/gcc-torture-execute-struct-ini-3.c,
+	  tests/gcc-torture-execute-string-opt-5.c,
+	  tests/gcc-torture-execute-stdarg-3.c,
+	  tests/gcc-torture-execute-shiftopt-1.c,
+	  tests/gcc-torture-execute-struct-ini-4.c,
+	  tests/gcc-torture-execute-stdarg-4.c,
+	  tests/gcc-torture-execute-switch-1.c,
+	  tests/gcc-torture-execute-scope-1.c,
+	  tests/gcc-torture-execute-loop-10.c,
+	  tests/gcc-torture-execute-loop-11.c,
+	  tests/gcc-torture-execute-loop-12.c,
+	  tests/gcc-torture-execute-loop-13.c,
+	  tests/gcc-torture-execute-loop-14.c,
+	  tests/gcc-torture-execute-loop-15.c,
+	  tests/gcc-torture-execute-loop-1.c,
+	  tests/gcc-torture-execute-loop-2.c,
+	  tests/gcc-torture-execute-loop-2c.c,
+	  tests/gcc-torture-execute-loop-2d.c,
+	  tests/gcc-torture-execute-loop-3b.c,
+	  tests/gcc-torture-execute-loop-3.c,
+	  tests/gcc-torture-execute-loop-3c.c,
+	  tests/gcc-torture-execute-loop-5.c,
+	  tests/gcc-torture-execute-loop-6.c,
+	  tests/gcc-torture-execute-loop-7.c,
+	  tests/gcc-torture-execute-loop-8.c,
+	  tests/gcc-torture-execute-loop-9.c:
+
+	* Added some tests from the execute part of the gcc torture regression test suite.
+
+2011-12-20 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as6808/Makefile.in,
+	* sdas/as8051/Makefile.in,
+	* sdas/asgb/Makefile.in,
+	* sdas/asrab/Makefile.in,
+	* sdas/asz80/Makefile.in: added dependencies
+
+2011-12-19 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asz80/z80pst.c: forgot this one, probably sdas dependencies are
+	  insufficient too
+
+2011-12-18 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* debugger/mcs51/sdcdb.c (escapeQuotes): fixed warning
+	* sdas/asrab/rabbitmch.c: fixed bug 3461821 by calling outrb with 0
+	* sdas/as6808/m08pst.c,
+	* sdas/as8051/i51adr.c,
+	* sdas/as8051/i51mch.c,
+	* sdas/as8051/i51pst.c,
+	* sdas/as8051/i8051.h,
+	* sdas/asgb/gbpst.c,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asexpr.c,
+	* sdas/asxxsrc/aslex.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asout.c,
+	* sdas/asxxsrc/assym.c,
+	* sdas/asxxsrc/asxxxx.h,
+	* sdas/asz80/z80mch.c,
+	* sdas/linksrc/aslink.h,
+	* sdas/linksrc/lkarea.c,
+	* sdas/linksrc/lkhead.c,
+	* sdas/linksrc/lklex.c,
+	* sdas/linksrc/lklist.c,
+	* sdas/linksrc/sdld.c,
+	* sdas/linksrc/sdld.h: another step towards ASxxxx v5
+	* sdas/asrab/rabbit.h,
+	* sdas/asrab/rabbitadr.c,
+	* sdas/asrab/rabbitext.c,
+	* sdas/asrab/rabbitpst.c: native line endings, no TABs
+	* src/ds390/main.c,
+	* src/mcs51/main.c,
+	* src/z80/main.c: asxxx -z flag is now case INsensitive
+	* src/hc08/main.c: fixed bug 1666106 by adding (PAG) to DSEG and OSEG
+	* src/SDCCglobl.h: fixed -E comment
+	* src/SDCCicode.c (geniCodeAdd),
+	* src/SDCCsymt.c (compStructSize): added error for unknown struct size
+	* src/SDCClabel.c: no TABs
+
+2011-12-17 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/include/mcs51/cc2530.h: new, added, thanks Zafi Ramarosandratana
+
+2011-12-08 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/lib/_atof.c,
+	* device/lib/_divuint.c,
+	* device/lib/_divulong.c,
+	* device/lib/_fsadd.c,
+	* device/lib/acosf.c,
+	* device/lib/asincosf.c,
+	* device/lib/asinf.c,
+	* device/lib/cosf.c,
+	* device/lib/cotf.c,
+	* device/lib/expf.c,
+	* device/lib/printf_large.c,
+	* device/lib/sincosf.c,
+	* device/lib/sincoshf.c,
+	* device/lib/sinf.c,
+	* device/lib/tancotf.c,
+	* device/lib/tanf.c,
+	* support/regression/tests/bug1337835.c,
+	* support/regression/tests/bug2719592.c,
+	* support/regression/tests/bug2805333.c,
+	* support/regression/tests/bug3223041.c,
+	* support/regression/tests/bug3290691.c,
+	* support/regression/tests/funptrs.c: changed BOOL to bool
+
+2011-12-07 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/include/stdbool.h: removed BOOL
+	* src/SDCCast.c (decorateType, addess of),
+	* src/SDCCsymt.c (checkSClass): fixed bug 2934292
+	* support/regression/tests/bool.c: enabled function pointer tests
+
+2011-12-07 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/linksrc/aslink.h,
+	* sdas/linksrc/lkarea.c,
+	* sdas/linksrc/lkbank.c,
+	* sdas/linksrc/lkdata.c,
+	* sdas/linksrc/lklex.c,
+	* sdas/linksrc/lklist.c,
+	* sdas/linksrc/lkmain.c,
+	* sdas/linksrc/lknoice.c,
+	* sdas/linksrc/lkout.c,
+	* sdas/linksrc/lkrloc.c,
+	* sdas/linksrc/lkrloc3.c,
+	* sdas/linksrc/lks19.c,
+	* sdas/linksrc/lksym.c,
+	* sdas/linksrc/Makefile.in: and another step towards ASxxxx v5
+
+2011-12-05 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc.c:
+	  Fixed bug #3441816.
+
+2011-12-04 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/linksrc/aslink.h,
+	* sdas/linksrc/aslink.vcxproj,
+	* sdas/linksrc/aslink.vcxproj.filters,
+	* sdas/linksrc/lkar.c,
+	* sdas/linksrc/lkarea.c,
+	* sdas/linksrc/lkbank.c,
+	* sdas/linksrc/lkdata.c,
+	* sdas/linksrc/lkhead.c,
+	* sdas/linksrc/lklex.c,
+	* sdas/linksrc/lklibr.c,
+	* sdas/linksrc/lklist.c,
+	* sdas/linksrc/lkmain.c,
+	* sdas/linksrc/lkmem.c,
+	* sdas/linksrc/lknoice.c,
+	* sdas/linksrc/lkout.c,
+	* sdas/linksrc/lkrloc.c,
+	* sdas/linksrc/lkrloc3.c,
+	* sdas/linksrc/lks19.c,
+	* sdas/linksrc/lksdcclib.c,
+	* sdas/linksrc/lksdcdb.c,
+	* sdas/linksrc/lksym.c,
+	* sdas/linksrc/Makefile.in: next step towards ASxxxx v5
+	* src/SDCCmem.c (allocIntoSeg): MSVC 2010 still needs all declarations at
+	  the start of a block in C mode
+	* src/z80/gen.c (genPointerSet): fixed warning
+	* src/SDCCast.c (processParms): removed incorrect function pointer check
+	* support/regression/tests/bug3440327.c: reenabled test for mcs51
+
+2011-12-03 Philipp Klaus Krause <pkk AT spth.de>
+
+	* support/regression/tests/bug3444293.c
+	  Fix warning in regression test.
+
+2011-12-02 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCcse.c,
+	  src/SDCCicode.h:
+	  Rename IS_ASSOCIATIVE to IS_COMMUTATIVE.
+
+2011-12-01 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c,
+	  src/z80/peeph-z80.def:
+	  Minor improvements in pointer handling for the z80 backends.
+
+2011-12-01 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClabel.c:
+	  Disable hidden jump-to-jump optimization for mcs51, since it breaks large and huge.
+
+2011-11-30 Philipp Klaus Krause <pkk AT spth.de>
+
+	* support/regression/tests/bug3440327.c:
+	  Disable bug 3440327 test on mcs51.
+
+2011-11-30 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCsymt.c:
+	  Cleanup leftover warning.
+
+2011-11-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c,
+	  src/z80/peeph-z80.def:
+	  Some small improvements to the generated code.
+
+2011-11-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  support/regression/tests/bug3444293.c:
+	  Fixed bug #3444293.
+
+2011-11-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* support/regression/tests/bug3440327.c:
+	  Regression test for bug #3440327.
+
+2011-11-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClabel.c:
+	  Optimize hidden jump-to-jump.
+
+2011-11-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Replaced some uses of isLastUse() by the safer isPairDead().
+
+2011-11-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* Merged the addrspacequal branch (named address spaces).
+
+2011-11-28 Borut Razem <borut.razem AT gmail.com>
+
+	* sim/ucsim/libltdl: direcrory removed since it is not used
+	* support/scripts/gen_known_bugs.pl: warious fixes
+	* src/pic16/ralloc.c, sim/ucsim/pobj.cc, sim/ucsim/utils.cc,
+	  sdas/linksrc/lkmain.c:
+	  fixed bug #3444387: Minor spelling fix in binary files;
+	  thanks to Gudjon I. Gudjonsson for the patch
+
+
+2011-11-27 Borut Razem <borut.razem AT gmail.com>
+
+	* Small Device C Compiler 3.1.0 released
+	* .version, doc/sdccman.lyx: changed sdcc version to 3.1.1
+	* support/scripts/gen_known_bugs.pl: adopted to the new SF bug tracker
+
+2011-11-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fixed bug #3440327.
+
+2011-11-17 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCsymt.h,
+	  src/SDCCsymt.c,
+	  src/SDCCast.c,
+	  src/SDCCopt.c:
+	  Error message for implicit casts between named address spaces, fix live-range analysis (regression tests passing now).
+
+2011-11-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCsymt.c,
+	  src/SDCCerr.h,
+	  src/SDCCerr.c:
+	  Error message for attemting to use named address spacces for auto variables.
+
+2011-11-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c:
+	  Fix broken control and data flow handling (regression tests passing now, exept for bug-895992.c).
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c:
+	  Improve handling of variables in named address space passed as parameters.
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c:
+	  Avoid emitting some unecessary bank switching calls.
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCast.c:
+	  Keep global named address spaces alive over functions.
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCicode.c,
+	  src/SDCCopt.c:
+	  Debug message cleanup, reenable address space splitting.
+
+2011-11-14 Raphael Neider <rneider AT web.de>
+
+	* device/include/pic14/pic14devices.txt,
+	* device/non-free/include/pic14/pic16f145[589].h,
+	* device/non-free/include/pic14/pic16f178[23].h,
+	* device/non-free/lib/pic14/libdev/Makefile.in,
+	* device/non-free/lib/pic14/libdev/devices.txt,
+	* device/non-free/lib/pic14/libdev/pic16f145[589].c,
+	* device/non-free/lib/pic14/libdev/pic16f178[23].c:
+	  add support for 16f145[589] and 16f178[23] devices
+
+	* device/non-free/include/pic14/pic12f683.h,
+	* device/non-free/lib/pic14/libdev/pic12f683.c:
+	  updated from new sources
+
+	* doc/sdccman.lyx:
+	  update device list, clarify use of NO_LEGACY_NAMES
+
+2011-11-13 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* doc/sdccman.lyx: added the boost dependency,
+	  --peep-return, --no-peep-return, --fomit-frame-pointer,
+	  the use of .omf extension,
+	  single mnemonic per assembly line,
+	  available peephole functions
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCcse.c,
+	  src/SDCCicode.c,
+	  src/SDCCopt.c:
+	  Basic support for pointers into named address spaces.
+
+2011-11-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCicode.c,
+	  src/SDCCsymt.c,
+	  src/SDCCsymt.h,
+	  src/SDCC.y,
+	  src/SDCCopt.c,
+	  src/SDCCast.c:
+	  Debug messages related to pointers to named address spaces.
+
+2011-11-12 Borut Razem <borut.razem AT gmail.com>
+
+	* added XXX_bits deprecation note in chapter
+	  1.4 Compatibility with previous versions
+
+2011-11-11 Raphael Neider <rneider AT web.de>
+
+	* device/non-free/lib/pic14/libdev/mkall.sh:
+	  simplify device library update process further
+
+	* support/scripts/inc2h.pl:
+	  avoid generating duplicate bit defines;
+	  rename XXX_bits to XXXbits to be compatible with PIC16 and HiTech,
+	  but retain XXX_bits symbols for compatibility (to prevent legacy
+	  names from being visible, #define NO_LEGACY_NAMES before
+	  #include'ing device headers
+
+	* device/include/pic14/pic14devices.txt,
+	* device/non-free/lib/pic14/libdev/devices.txt:
+	  updated device names: 16{f => lf}190x, 1{2 => 6}f1847,
+	  no devices exist with the original names
+
+	* device/non-free/include/pic14/pic12f1840.h,
+	* device/non-free/include/pic14/pic16f1507.h,
+	* device/non-free/include/pic14/pic16f182[34589].h,
+	* device/non-free/include/pic14/pic16f1847.h,
+	* device/non-free/include/pic14/pic16f193[89].h,
+	* device/non-free/include/pic14/pic16lf190[23467].h,
+	* device/non-free/lib/pic14/libdev/Makefile.in,
+	* device/non-free/lib/pic14/libdev/pic12f1840.c,
+	* device/non-free/lib/pic14/libdev/pic16f1507.c,
+	* device/non-free/lib/pic14/libdev/pic16f182[34589].c,
+	* device/non-free/lib/pic14/libdev/pic16f1847.c,
+	* device/non-free/lib/pic14/libdev/pic16f193[89].c,
+	* device/non-free/lib/pic14/libdev/pic16lf190[23467].c:
+	  add device libraries for more enhanced core devices,
+	  no legacy names (XXX_bits) here!
+
+	* device/non-free/include/pic14/pic*.h,
+	* device/non-free/lib/pic14/libdev/pic*.c:
+	  regenerated from new sources using the new inc2h.pl
+
+	* doc/sdccman.lyx: updated list of supported devices,
+	  documented change of naming schemes and the use of
+	  #define NO_BIT_DEFINES and #define NO_LEGACY_NAMES
+
+2011-11-11 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCCsystem.c: removed wine bug workaround:
+	  wine bug #25062 was fixed in wine 1.3.
+
+2011-11-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCmem.h,
+	  src/SDCCmem.c,
+	  src/SDCCglue.c:
+	  Use named address space as segment name for the linker.
+
+2011-11-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCsymt.h,
+	  src/SDCCsymt.c,
+	  src/SDCC.y,
+	  src/SDCCopt.c:
+	  Basic compiler-side named address space support.
+
+2011-11-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCsymt.h,
+	  src/SDCC.y,
+	  src/SDCCopt.c,
+	  src/SDCCicode.c
+	  src/z80/ralloc.c:
+	  Preparations for named address space support.
+
+2011-11-08 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCsymt.c,
+	  src/SDCCsymt.h,
+	  src/SDCC.y,
+	  src/SDCC.lex,
+	  src/SDCCast.c:
+	  Preparations for named address space support.
+
 2011-11-05 Borut Razem <borut.razem AT gmail.com>
 
 	* src/port.mk: fixed bug #3401455: Missing dependency
 	* .version, sdcc.spec, doc/sdccman.lyx, doc/INSTALL.txt:
-	  changed sdcc version to 3.0.0
+	  changed sdcc version to 3.1.0
+	* doc/README.txt, support/scripts/sdcc.nsi: updated, small textual fix
 
 2011-11-05 Maarten Brock <sourceforge.brock AT dse.nl>
 
@@ -20226,7 +20661,7 @@
 	wherever there is enough space for it, and IDATA can be anywhere
 	in internal RAM.  For now compile using	-Wl-Y[stack_size].
 	The mem file is different for this option as well, since it
-	makes no sense of talking about DSEG lenght.
+	makes no sense of talking about DSEG length.
 
 2004-01-02 Vangelis Rokas <vrokas AT otenet.gr>
 
@@ -23734,6 +24169,7 @@
 2001-11-07  Michael Hope  <michaelh AT juju.net.nz>
 
 	* support/regression/tests/float.c (testFloatAdd): Fixed up warning.
+
 2001-11-18  Bernhard Held  <bernhard AT bernhardheld.de>
 
 	* sdcc/support/regression/tests/bug-460010.c: fix seg violation on host
