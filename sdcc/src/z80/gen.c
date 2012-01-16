@@ -1758,7 +1758,7 @@ aopGetLitWordLong (const asmop *aop, int offset, bool with_hash)
                 wassertl(0, "Encountered an invalid offset while fetching a literal");
               }
 
-            dbuf_tprintf (&dbuf, with_hash ? "!immedword" : "!constword", v);
+            dbuf_tprintf (&dbuf, with_hash ? "!immedword" : "!constword", v & 0xfffful);
           }
         else
           {
@@ -2115,7 +2115,7 @@ fetchPairLong (PAIR_ID pairId, asmop *aop, const iCode *ic, int offset)
               }
 
             /* Operand resides (partially) in the pair */
-            else if (!regalloc_dry_run && !strcmp(aopGet (aop, offset + 1, FALSE), _pairs[pairId].l))	// Todo: Exact cost
+            else if (!regalloc_dry_run && !strcmp(aopGet (aop, offset + 1, FALSE), _pairs[pairId].l))	// aopGet (aop, offset + 1, FALSE) is problematic: It prevents calcualtion of exact cost, and results in redundatn code being generated. Todo: Exact cost
               {
                 _moveA3 (aop, offset + 1);
                 if(!regalloc_dry_run)
@@ -2131,7 +2131,7 @@ fetchPairLong (PAIR_ID pairId, asmop *aop, const iCode *ic, int offset)
                     emit2 ("ld %s,%s", _pairs[pairId].l, aopGet (aop, offset, FALSE));
                     emit2 ("ld %s,%s", _pairs[pairId].h, aopGet (aop, offset + 1, FALSE));
                   }
-                regalloc_dry_run_cost += ld_cost(ASMOP_L, aop) * 2;           
+                regalloc_dry_run_cost += ld_cost(ASMOP_L, aop) * 2;
               }
           }
         /* PENDING: check? */
@@ -3899,7 +3899,8 @@ emitCall (const iCode *ic, bool ispcall)
         _G.stack.pushed -= i;
       if (IS_GB)
         {
-          emit2 ("!ldaspsp", i);
+          emit2 ("add sp, #%d", i);
+          regalloc_dry_run_cost += 3;
         }
       else
         {
@@ -4620,7 +4621,7 @@ genPlusIncr (const iCode *ic)
             }
         }
       if (!regalloc_dry_run)
-        AOP_TYPE (IC_LEFT (ic)) == AOP_HL ? emitLabel (tlbl->key + 100) : emitLabelNoSpill (tlbl->key + 100);
+        (AOP_TYPE (IC_LEFT (ic)) == AOP_HL || IS_GB && AOP_TYPE (IC_LEFT (ic)) == AOP_STK)? emitLabel (tlbl->key + 100) : emitLabelNoSpill (tlbl->key + 100);
       else if (AOP_TYPE (IC_LEFT (ic)) == AOP_HL)
         spillCached ();
       return TRUE;
@@ -5882,9 +5883,9 @@ genCmp (operand * left, operand * right,
               offset++;
             }
           if(sign)
-            {  
+            {
               emit2("ld d, (hl)");
-              emit2("ld a, %s", aopGet (AOP (right), offset, FALSE));
+              emit2("ld a, %s", aopGet (AOP (right), offset - 1, FALSE));
               emit2("ld e, a");
             }
           spillPair (PAIR_HL);
@@ -6262,7 +6263,7 @@ genCmpEq (iCode * ic, iCode * ifx)
   aopOp ((right = IC_RIGHT (ic)), ic, FALSE, FALSE);
   aopOp ((result = IC_RESULT (ic)), ic, TRUE, FALSE);
 
-  hl_touched = (AOP_TYPE (IC_LEFT (ic)) == AOP_HL || AOP_TYPE (IC_RIGHT (ic)) == AOP_HL);
+  hl_touched = (AOP_TYPE (IC_LEFT (ic)) == AOP_HL || AOP_TYPE (IC_RIGHT (ic)) == AOP_HL || IS_GB && AOP_TYPE (IC_LEFT (ic)) == AOP_STK || IS_GB && AOP_TYPE (IC_RIGHT (ic)) == AOP_STK);
 
   emitDebug ("; genCmpEq: left %u, right %u, result %u", AOP_SIZE(IC_LEFT(ic)), AOP_SIZE(IC_RIGHT(ic)), AOP_SIZE(IC_RESULT(ic)));
 
@@ -7393,6 +7394,12 @@ AccRol (int shCount)
   switch (shCount)
     {
     case 4:
+      if (IS_GB)
+        {
+          emit2("swap a");
+          regalloc_dry_run_cost += 2;
+          break;
+        }
       emit3 (A_RLCA, 0, 0);
     case 3:
       emit3 (A_RLCA, 0, 0);
@@ -8894,6 +8901,12 @@ genAssign (const iCode *ic)
     {
       fetchPairLong (getPairId (AOP (result)), AOP (right), ic, LSB);
     }
+  else if (isPair (AOP (right)) && AOP_TYPE (result) == AOP_IY && size == 2)
+    {
+      /* Assigning directly is cheaper than using IY. */
+      emit2("ld (%s), %s", AOP (result)->aopu.aop_dir, getPairName (AOP (right)));
+      regalloc_dry_run_cost += 4;
+    }
   else if (getPairId (AOP (right)) == PAIR_IY)
     {
       while (size--)
@@ -8905,17 +8918,41 @@ genAssign (const iCode *ic)
               emit2 ("pop af");
               emit2 ("inc sp");
               regalloc_dry_run_cost += 5;
-              cheapMove (AOP (result), size, ASMOP_A , 0);
+              if (AOP_TYPE(result) == AOP_IY) /* Take care not to overwrite iy */
+                {
+                  emit2("ld (%s+%d), a", AOP (result)->aopu.aop_dir, size);
+                  regalloc_dry_run_cost += 3;
+                }
+              else
+                cheapMove (AOP (result), size, ASMOP_A , 0);
             }
           else if(size == 1)
             {
-              emit2 ("push iy");
-              emit2 ("pop af");
-              regalloc_dry_run_cost += 3;
-              cheapMove (AOP (result), size, ASMOP_A , 0);
+              if (AOP_TYPE(result) == AOP_IY) /* Take care not to overwrite iy */
+                {
+                  emit2("ld (%s), iy", AOP (result)->aopu.aop_dir);
+                  regalloc_dry_run_cost += 4;
+                  size--;
+                }
+              else
+                {
+                  emit2 ("push iy");
+                  emit2 ("pop af");
+                  regalloc_dry_run_cost += 3;
+                  cheapMove (AOP (result), size, ASMOP_A , 0);
+                }
             }
           else
-            cheapMove (AOP (result), size, ASMOP_ZERO, 0);
+            {
+              if (AOP_TYPE(result) == AOP_IY) /* Take care not to overwrite iy */
+                {
+                  cheapMove (ASMOP_A, 0, ASMOP_ZERO , 0);
+                  emit2("ld (%s+%d), a", AOP (result)->aopu.aop_dir, size);
+                  regalloc_dry_run_cost += 3;
+                }
+              else
+                cheapMove (AOP (result), size, ASMOP_ZERO , 0);
+            }
         }
     }
   else if ((size > 1) &&

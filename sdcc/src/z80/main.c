@@ -38,8 +38,6 @@
 #define OPTION_ASM             "--asm="
 #define OPTION_NO_STD_CRT0     "--no-std-crt0"
 #define OPTION_RESERVE_IY      "--reserve-regs-iy"
-#define OPTION_DUMP_GRAPHS     "--dump-graphs"
-#define OPTION_MAX_ALLOCS_NODE "--max-allocs-per-node"
 #define OPTION_OLDRALLOC       "--oldralloc"
 
 static char _z80_defaultRules[] = {
@@ -67,8 +65,6 @@ static OPTION _z80_options[] = {
   {0, OPTION_CONST_SEG,       &options.const_seg, "<name> use this name for the const segment", CLAT_STRING},
   {0, OPTION_NO_STD_CRT0,     &options.no_std_crt0, "For the z80/gbz80 do not link default crt0.rel"},
   {0, OPTION_RESERVE_IY,      &z80_opts.reserveIY, "Do not use IY (incompatible with --fomit-frame-pointer)"},
-  {0, OPTION_MAX_ALLOCS_NODE, &options.max_allocs_per_node, "Maximum number of register assignments considered at each node of the tree decomposition", CLAT_INTEGER},
-  {0, OPTION_DUMP_GRAPHS,     &z80_opts.dump_graphs, "Dump control flow graph, conflict graph and tree decomposition in register allocator"},
   {0, OPTION_OLDRALLOC,       &z80_opts.oldralloc, "Use old register allocator"},
   {0, NULL}
 };
@@ -80,8 +76,6 @@ static OPTION _gbz80_options[] = {
   {0, OPTION_CODE_SEG,        &options.code_seg, "<name> use this name for the code segment", CLAT_STRING},
   {0, OPTION_CONST_SEG,       &options.const_seg, "<name> use this name for the const segment", CLAT_STRING},
   {0, OPTION_NO_STD_CRT0,     &options.no_std_crt0, "For the z80/gbz80 do not link default crt0.rel"},
-  {0, OPTION_MAX_ALLOCS_NODE, &options.max_allocs_per_node, "Maximum number of register assignments considered at each node of the tree decomposition", CLAT_INTEGER},
-  {0, OPTION_DUMP_GRAPHS, &z80_opts.dump_graphs, "Dump control flow graph, conflict graph and tree decomposition in register allocator"},
   {0, NULL}
 };
 
@@ -626,14 +620,6 @@ _setDefaultOptions (void)
 
   options.data_loc = IS_GB ? 0xC000 : 0x8000;
   options.out_fmt = 'i';        /* Default output format is ihx */
-  optimize.global_cse = 1;
-  optimize.label1 = 1;
-  optimize.label2 = 1;
-  optimize.label3 = 1;
-  optimize.label4 = 1;
-  optimize.loopInvariant = 1;
-  optimize.loopInduction = 1;
-  z80_opts.dump_graphs = 0;
 }
 
 /* Mangling format:
@@ -683,7 +669,6 @@ static bool
 _hasNativeMulFor (iCode * ic, sym_link * left, sym_link * right)
 {
   sym_link *test = NULL;
-  value *val;
   int result_size = IS_SYMOP(IC_RESULT(ic)) ? getSize(OP_SYM_TYPE(IC_RESULT(ic))) : 4;
 
   if (ic->op != '*')
@@ -692,15 +677,9 @@ _hasNativeMulFor (iCode * ic, sym_link * left, sym_link * right)
     }
 
   if (IS_LITERAL (left))
-    {
-      test = left;
-      val = OP_VALUE (IC_LEFT (ic));
-    }
+    test = left;
   else if (IS_LITERAL (right))
-    {
-      test = right;
-      val = OP_VALUE (IC_RIGHT (ic));
-    }
+    test = right;
   /* 8x8 unsigned multiplication code is shorter than
      call overhead for the multiplication routine. */
   else if (IS_CHAR (right) && IS_UNSIGNED (right) && IS_CHAR (left) && IS_UNSIGNED (left) && !IS_GB)
@@ -834,20 +813,20 @@ PORT z80_port = {
    "STACK",
    "CODE",
    "DATA",
-   "ISEG",
+   NULL,                        /* idata */
    NULL,                        /* pdata */
-   "XSEG",
-   "BSEG",
+   NULL,                        /* xdata */
+   NULL,                        /* bit */
    "RSEG (ABS)",
    "GSINIT",
-   "OVERLAY",
+   NULL,                        /* overlay */
    "GSFINAL",
    "HOME",
    NULL,                        /* xidata */
    NULL,                        /* xinit */
    NULL,                        /* const_name */
-   "CABS",                      /* cabs_name */
-   NULL,                        /* xabs_name */
+   "CABS (ABS)",                /* cabs_name */
+   "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
    NULL,
    NULL,
@@ -958,20 +937,20 @@ PORT z180_port = {
    "STACK",
    "CODE",
    "DATA",
-   "ISEG",
+   NULL,                        /* idata */
    NULL,                        /* pdata */
-   "XSEG",
-   "BSEG",
+   NULL,                        /* xdata */
+   NULL,                        /* bit */
    "RSEG (ABS)",
    "GSINIT",
-   "OVERLAY",
+   NULL,                        /* overlay */
    "GSFINAL",
    "HOME",
    NULL,                        /* xidata */
    NULL,                        /* xinit */
    NULL,                        /* const_name */
-   "CABS",                      /* cabs_name */
-   NULL,                        /* xabs_name */
+   "CABS (ABS)",                /* cabs_name */
+   "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
    NULL,
    NULL,
@@ -1084,20 +1063,20 @@ PORT gbz80_port = {
    "STACK",
    "CODE",
    "DATA",
-   "ISEG",
+   NULL,                        /* idata */
    NULL,                        /* pdata */
-   "XSEG",
-   "BSEG",
+   NULL,                        /* xdata */
+   NULL,                        /* bit */
    "RSEG",
    "GSINIT",
-   "OVERLAY",
+   NULL,                        /* overlay */
    "GSFINAL",
    "HOME",
    NULL,                        /* xidata */
    NULL,                        /* xinit */
    NULL,                        /* const_name */
-   "CABS",                      /* cabs_name */
-   NULL,                        /* xabs_name */
+   "CABS (ABS)",                /* cabs_name */
+   "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
    NULL,
    NULL,
@@ -1210,20 +1189,20 @@ PORT r2k_port = {
    "STACK",
    "CODE",
    "DATA",
-   "ISEG",
+   NULL,                        /* idata */
    NULL,                        /* pdata */
-   "XSEG",
-   "BSEG",
+   NULL,                        /* xdata */
+   NULL,                        /* bit */
    "RSEG (ABS)",
    "GSINIT",
-   "OVERLAY",
+   NULL,                        /* overlay */
    "GSFINAL",
    "HOME",
    NULL,                        /* xidata */
    NULL,                        /* xinit */
    NULL,                        /* const_name */
-   "CABS",                      /* cabs_name */
-   NULL,                        /* xabs_name */
+   "CABS (ABS)",                /* cabs_name */
+   "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
    NULL,
    NULL,

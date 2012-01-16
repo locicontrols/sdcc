@@ -1,3 +1,200 @@
+2012-01-16 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix signed comparison on gbz80.
+	* device/lib/_memmove.c:
+	  Fix comparison in pointer location for memmove().
+	* src/z80/peeph-gbz80.def:
+	  Enable some jump peepholes for gbz80.
+
+2012-01-15 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix #3473876.
+	* Changelog:
+	  Pretend to live in the year 2012 to not cause suspicion.
+	* device/lib/_memmove.c:
+	  Simplified test deciding copy direction for memmove().
+	* src/z80/peeph-gbz80.def:
+	  Use gbz80-specific load-and-increment/decrement instructions.
+	* src/z80/mappings.i:
+	  Use more intuitive add sp, d syntax instead of lda sp, d(sp).
+
+2012-01-15 Borut Razem <borut.razem AT gmail.com>
+
+	* sdas/asrab/Makefile.in: fixed linking with -lm math library
+	* src/SDCCnaddr.cc: removed unicode BOM
+	* device/lib/pic14/configure.in, device/lib/pic14/configure,
+	  device/lib/pic14/aclocal.m4: fixed transfer of gcc CFLAGS to
+	  sdcc while generating dependencies
+
+2012-01-14 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fixed bug #3473863 in increment of pointers, fixed similar bug in equality comparison.
+	* support/regression/tests/memory.c:
+	  Enable a memchr() test.
+	* support/regression/tests/bug2729218.c:
+	  Move struct out of ROM for gbz80.
+
+2012-01-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/main.c:
+	  Remove unnecessary value calculation in _hasNativeMulFor().
+
+2012-01-14 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* .version,
+	* doc/sdccman.lyx: bumped version to 3.1.2
+	* src/SDCCicode.c (checkTypes): fixed bug 2942343
+	* src/SDCCnaddr.cc: svn properties
+	* src/SDCCnaddr.hpp: removed some typename keywords for MSVC,
+	  fixed warning
+	* src/src.vcxproj: added SDCCnaddr.*, added boost include path
+	* src/z80/z80.vcxproj: upgraded boost include path
+	* support/regression/tests/bug2942343.c: new, added
+
+2012-01-11 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCC.lex: removed #line rule handled by preprocessor
+
+2012-01-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCglobl.h,
+	  src/z80/z80.h,
+	  src/z80/main.c,
+	  src/z80/ralloc2.cc,
+	  src/SDCCnaddr.hpp,
+	  src/SDCCmain.c,
+	  src/SDCCnaddr.cc:
+	  Make optimal placement of bank-selection instructions configurable using --max-allocs-per-node and --dump-graphs options.
+
+2012-01-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCnaddr.hpp,
+	  src/SDCCopt.c,
+	  src/SDCCopt.h:
+	  Optimal placement of bank-switching calls.
+
+2012-01-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCicode.h,
+	  src/SDCCnaddr.cc,
+	  src/SDCCnaddr.hpp,
+	  src/SDCCopt.c,
+	  src/z80/ralloc2.cc,
+	  src/SDCCopt.h,
+	  src/Makefile.in:
+	  Preparations for optimal placement of bank-switching calls.
+
+2012-01-10 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCicode.c: fixed bug 3466784
+
+2012-01-09 Leland Morrison <enigmalee AT sourceforge.net>
+	
+	* sim/ucsim/z80.src/glob_lr35902.cc: disassemble for gb processor
+	* sim/ucsim/z80.src/inst_lr35902.cc: instruction simulation for gb
+	* sim/ucsim/z80.src/lr35902.cc,
+	* sim/ucsim/z80.src/lr35902cl.h: definition of gb processor
+	* sim/ucsim/z80.src/z80cl.h,
+	* sim/ucsim/z80.src/z80.cc: added peek1 function to look at next opcode
+	* sim/ucsim/z80.src/glob.cc: fixes to disassembly for "ld e,<byte>",
+	  "inc (hl)", and "dec (hl)" for z80 processor
+	* sim/ucsim/z80.src/glob.h: added declaration for gb disassembly table
+	* sim/ucsim/z80.src/inst_r2k.h: fix to sign extension for add sp,d
+	* sim/ucsim/z80.src/simz80.cc: added -tlr35902 option for gameboy
+	* support/regression/Makefile.in,
+	* support/regression/ports/ucgbz80/*: added option to run regression
+	  tests for the gb processor using ucsim
+	
+2012-01-08 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCC.lex: included io.h for read() declaration with MSVC,
+	  fixed linenr bug
+	* src/SDCCerr.c: made W_LIT_OVERFLOW pedantic
+	* src/SDCCglue.c (printIvalType, printIvalBitFields),
+	* src/SDCCicode.c checkTypes): removed lessPedantic check
+	* src/SDCCicode.c (geniCodeCast): fixed bug 3470368
+
+2012-01-06 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fixed width of lower part of large literals.
+
+2012-01-06 Borut Razem <borut.razem AT gmail.com>
+
+	* sdas/linksrc/Makefile.in: removed LKLIB
+	* device/non-free/lib/Makefile.in: removed SOURCES
+
+2012-01-04 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/hc08/gen.c:
+	  More explicit stack size reporting for hc08.
+
+2012-01-04 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCCopt.c (killDeadCode): fixed bug 2862308
+	* support/regression/tests/bug2862308.c: new, added
+
+2012-01-03 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/gcc-torture-execute-string-opt-5.c:
+	  Fixed bug #3463342.
+
+2012-01-03 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as6808/m08ext.c,
+	* sdas/as6808/as_hc08.vcxproj,
+	* sdas/as6808/as_hc08.vcxproj.filters,
+	* sdas/as6808/Makefile.in: removed m08ext.c
+	* sdas/as6808/m08adr.c,
+	* sdas/as6808/m08mch.c, 
+	* sdas/as6808/m08pst.c,
+	* sdas/as6808/m6808.h,
+	* sdas/asxxsrc/asout.c: synced with ASxxxx v5 to fix bug 2894291
+
+2012-01-02 Borut Razem <borut.razem AT gmail.com>
+
+	* sdcc/SDCC.lex: included unistd.h, needed by flex 2.5.4 on
+	  NetBSD 5.0.1 sparc64 for read() declaration
+	* sdas/linksrc/lkar.h: '\n' replaced by '\012'
+
+2012-01-02 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/src.vcxproj: increased stack size 32M/64M so it never overflows
+	* src/Makefile.in: added flex fast flag -f
+	* src/SDCC.lex: removed preprocessor warning and error rules,
+	  removed EOL after #... rules
+
+2011-12-29 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/lib/clean.mk: added z180 and r2k
+	* sim/ucsim/cmd.src/cmdlex.l: fixed unused yyunput warning
+	* src/hc08/main.c: removed unused BSEG
+	* src/SDCCglue.c (glue): suppress unused segments
+	* src/SDCCmem.c (allocMap, initMem): skip when name==NULL,
+	  (allocGlobal): use x_abs for __at on z80, fixed bug 2040874
+	* src/z80/main.c: removed ISEG, XSEG, BSEG, OVERLAY, added DABS (x_abs)
+	* support/regression/fwk/include/testfwk.h,
+	* support/regression/tests/absolute.c: z80 supports __at
+
+2011-12-29 Borut Razem <borut.razem AT gmail.com>
+
+	* support/cpp/libcpp/lex.c:
+	  partialy synchronized with sdcpp 4.6.[12]: no mmx, sse, altivec
+	* support/cpp/version.c: updated version to 4.6.2
+	* support/cpp/configure.in, support/cpp/configure,
+	  support/cpp/config.in: WORDS endianness detection
+
+2011-12-27 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCC.lex,
+	* src/SDCC.y: fixed bugs 1810965 and 2698805
+	* src/SDCCsymt.c (checkSClass): removed old hack-o-matic
+	* support/regression/tests/bug1810965.c: new, added
+
 2011-12-26 Philipp Klaus Krause <pkk AT spth.de>
 
 	* src/SDCCralloc.hpp:
@@ -348,7 +545,6 @@
 	  sdas/linksrc/lkmain.c:
 	  fixed bug #3444387: Minor spelling fix in binary files;
 	  thanks to Gudjon I. Gudjonsson for the patch
-
 
 2011-11-27 Borut Razem <borut.razem AT gmail.com>
 
