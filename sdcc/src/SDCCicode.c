@@ -1135,10 +1135,10 @@ getBuiltinParms (iCode * fic, int *pcount, operand ** parms)
   return ic;
 }
 
-/* This seems to be a GCC 4.6.[01] bug on i386 Linux and mingw platforms
+/* This seems to be a GCC 4.6.[012] bug on i386 Linux and mingw platforms
  * see http://sourceforge.net/tracker/?func=detail&aid=3285611&group_id=599&atid=300599
  */
-#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
+#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ >= 0 && __GNUC_PATCHLEVEL__ <= 2)
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 #endif
@@ -1397,10 +1397,10 @@ operandOperation (operand * left, operand * right, int op, sym_link * type)
 
   return retval;
 }
-/* This seems to be a GCC 4.6.[01] bug on i386 Linux and mingw platforms
+/* This seems to be a GCC 4.6.[012] bug on i386 Linux and mingw platforms
  * see http://sourceforge.net/tracker/?func=detail&aid=3285611&group_id=599&atid=300599
  */
-#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ == 0 || __GNUC_PATCHLEVEL__ == 1)
+#if (defined(__linux__) || defined(__MINGW32__)) && defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 6 && (__GNUC_PATCHLEVEL__ >= 0 && __GNUC_PATCHLEVEL__ <= 2)
 #pragma GCC pop_options
 #endif
 
@@ -1978,15 +1978,7 @@ geniCodeCast (sym_link *type, operand *op, bool implicit)
   ic = newiCode (CAST, operandFromLink (type), geniCodeRValue (op, FALSE));
   IC_RESULT (ic) = newiTempOperand (type, 0);
 
-  /* preserve the storage class & output class */
-  /* of the original variable                  */
   restype = getSpec (operandType (IC_RESULT (ic)));
-  if (!IS_LITERAL (opetype) && !IS_BIT (opetype))
-    {
-      SPEC_SCLS (restype) = SPEC_SCLS (opetype);
-      SPEC_OCLS (restype) = SPEC_OCLS (opetype);
-    }
-
   /* Convert cast to _Bool bitfield members to casts to _Bool. */
   if (SPEC_NOUN (restype) == V_BBITFIELD)
     SPEC_NOUN (restype) = V_BOOL;
@@ -2286,8 +2278,7 @@ geniCodeAdd (operand * left, operand * right, RESULT_TYPE resultType, int lvl)
   IC_RESULT (ic) = newiTempOperand (resType, 1);
   IC_RESULT (ic)->isaddr = (isarray ? 1 : 0);
 
-  /* if left or right is a float then support
-     routine */
+  /* if left or right is a float then support routine */
   if (IS_FLOAT (ltype) || IS_FLOAT (rtype) || IS_FIXED (ltype) || IS_FIXED (rtype))
     ic->supportRtn = 1;
 
@@ -2402,8 +2393,9 @@ geniCodeArray (operand * left, operand * right, int lvl)
 
   ic = newiCode ('+', left, right);
 
-  IC_RESULT (ic) = newiTempOperand (((IS_PTR (ltype) &&
-                                      !IS_AGGREGATE (ltype->next) && !IS_PTR (ltype->next)) ? ltype : ltype->next), 0);
+  IC_RESULT (ic) = newiTempOperand ((IS_PTR (ltype) &&
+                                     !IS_AGGREGATE (ltype->next) &&
+                                     !IS_PTR (ltype->next)) ? ltype : ltype->next, 0);
 
   if (!IS_AGGREGATE (ltype->next))
     {
@@ -3087,14 +3079,7 @@ checkTypes (operand * left, operand * right)
 {
   sym_link *ltype = operandType (left);
   sym_link *rtype = operandType (right);
-
-  /* left is integral type and right is literal then
-     check if the literal value is within bounds */
-  if (IS_INTEGRAL (ltype) && right->type == VALUE && IS_LITERAL (rtype) &&
-      checkConstantRange (ltype, rtype, '=', FALSE) == CCR_OVL && !options.lessPedantic)
-    {
-      werror (W_LIT_OVERFLOW);
-    }
+  bool always_cast = FALSE;
 
   /* if the left & right type don't exactly match */
   /* if pointer set then make sure the check is
@@ -3106,22 +3091,25 @@ checkTypes (operand * left, operand * right)
     {
       if (left->aggr2ptr)
         {
-          right = geniCodeCast (ltype, right, TRUE);
-          checkPtrQualifiers (ltype, rtype);
+          always_cast = TRUE;
         }
       else
         {
-          if (compareType (ltype->next, rtype) < 0)
-            right = geniCodeCast (ltype->next, right, TRUE);
-          checkPtrQualifiers (ltype->next, rtype);
+          ltype = ltype->next;
         }
     }
-  else
+
+  /* left is integral type and right is literal then
+     check if the literal value is within bounds */
+  if (IS_INTEGRAL (ltype) && right->type == VALUE && IS_LITERAL (rtype) &&
+      checkConstantRange (ltype, rtype, '=', FALSE) == CCR_OVL)
     {
-      if (compareType (ltype, rtype) < 0)
-        right = geniCodeCast (ltype, right, TRUE);
-      checkPtrQualifiers (ltype, rtype);
+      werror (W_LIT_OVERFLOW);
     }
+
+  if (always_cast || compareType (ltype, rtype) < 0)
+    right = geniCodeCast (ltype, right, TRUE);
+  checkPtrQualifiers (ltype, rtype);
   return right;
 }
 
@@ -3518,6 +3506,10 @@ geniCodeReturn (operand * op)
 {
   iCode *ic;
 
+  /* return in _Noreturn function */ 
+  if (currFunc && IFFUNC_ISNORETURN (currFunc->type))
+    werror (W_NORETURNRETURN);
+
   /* if the operand is present force an rvalue */
   if (op)
     op = geniCodeRValue (op, FALSE);
@@ -3576,7 +3568,10 @@ geniCodeIfx (ast * tree, int lvl)
     }
 
 exit:
-  ast2iCode (tree->right, lvl + 1);
+  if (tree->right && tree->right->type == EX_VALUE)
+    geniCodeDummyRead (ast2iCode (tree->right, lvl + 1));
+  else
+    ast2iCode (tree->right, lvl + 1);
 }
 
 /*-----------------------------------------------------------------*/
@@ -3838,7 +3833,6 @@ geniCodeSwitch (ast * tree, int lvl)
       ADDTOCHAIN (ic);
       caseVals = caseVals->next;
     }
-
 
 defaultOrBreak:
   /* if default is present then goto break else break */
@@ -4368,7 +4362,13 @@ ast2iCode (ast * tree, int lvl)
 
     case LABEL:
       geniCodeLabel (OP_SYMBOL (ast2iCode (tree->left, lvl + 1)));
-      return ast2iCode (tree->right, lvl + 1);
+      if (tree->right && tree->right->type == EX_VALUE)
+        {
+          geniCodeDummyRead (ast2iCode (tree->right, lvl + 1));
+	  return NULL;
+	}
+      else
+	return ast2iCode (tree->right, lvl + 1);
 
     case GOTO:
       geniCodeGoto (OP_SYMBOL (ast2iCode (tree->left, lvl + 1)));

@@ -93,6 +93,8 @@ asmop;
 void genZ80Code (iCode *);
 void z80_emitDebuggerSymbol (const char *);
 
-extern bool assignment_optimal;
+extern bool z80_assignment_optimal;
+extern bool should_omit_frame_ptr;
 
 #endif
+

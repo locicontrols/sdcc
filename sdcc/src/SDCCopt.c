@@ -1220,7 +1220,7 @@ separateAddressSpaces (eBBlock ** ebbs, int count)
           right = IC_RIGHT (ic);
           result = IC_RESULT (ic);
           
-          //printf ("Looking at ic %d, op %d\n", ic->key, (int)(ic->op));
+          /*printf ("Looking at ic %d, op %d\n", ic->key, (int)(ic->op));*/
           
           if (left && IS_SYMOP (left))
             { 
@@ -1290,8 +1290,9 @@ separateAddressSpaces (eBBlock ** ebbs, int count)
             
           if (newic)
             {
-              newic->filename = filename;
-              newic->lineno = lineno;
+              newic->filename = ic->filename;
+              newic->lineno = ic->lineno;
+              newic->block = ic->block;
               addiCodeToeBBlock (ebbs[i], newic, iic);
             } 
             
@@ -1301,75 +1302,98 @@ separateAddressSpaces (eBBlock ** ebbs, int count)
     }
 }
 
+const symbol *
+getAddrspaceiCode (const iCode *ic)
+{
+  operand *left, *right, *result;
+  const symbol *leftaddrspace = 0, *rightaddrspace = 0, *resultaddrspace = 0;
+  const symbol *addrspace;
+
+  left = IC_LEFT (ic);
+  right = IC_RIGHT (ic);
+  result = IC_RESULT (ic);
+
+  /* Previous transformations in separateAddressSpaces() should
+     ensure that at most one addressspace occours in each iCode. */
+  if (left && IS_SYMOP (left))
+    { 
+      if (POINTER_GET (ic))
+        {
+          assert (!(IS_DECL (OP_SYMBOL (left)->type) && DCL_PTR_ADDRSPACE (OP_SYMBOL (left)->type)));
+          leftaddrspace = getAddrspace (OP_SYMBOL (left)->type->next);
+        }
+      else
+        leftaddrspace = getAddrspace (OP_SYMBOL (left)->type);
+    }
+  if (right && IS_SYMOP (right))
+    rightaddrspace = getAddrspace (OP_SYMBOL (right)->type);
+  if (result && IS_SYMOP (result))
+    { 
+      if (POINTER_SET (ic))
+        {
+          assert (!(IS_DECL (OP_SYMBOL (result)->type) && DCL_PTR_ADDRSPACE (OP_SYMBOL (result)->type)));
+          resultaddrspace = getAddrspace (OP_SYMBOL (result)->type->next);
+        }
+      else
+        resultaddrspace = getAddrspace (OP_SYMBOL (result)->type);
+    }
+           
+  addrspace = leftaddrspace;
+  if (rightaddrspace)
+    {
+      wassertl (!addrspace || addrspace == rightaddrspace, "Multiple named address spaces in icode.");
+      addrspace = rightaddrspace;
+    }
+  if (resultaddrspace)
+    {
+      wassertl (!addrspace || addrspace == resultaddrspace, "Multiple named address spaces in icode.");
+      addrspace = resultaddrspace;
+    }
+
+  return (addrspace);
+}
+
+/*-----------------------------------------------------------------*/
+/* switchAddressSpaceAt - insert a bank selection instruction      */
+/*-----------------------------------------------------------------*/
+void
+switchAddressSpaceAt (iCode *ic, const symbol *const addrspace)
+{
+  iCode *newic;
+  const symbol *const laddrspace = getAddrspaceiCode (ic);
+  wassertl(!laddrspace || laddrspace == addrspace, "Switching to invalid address space.");
+
+  newic = newiCode (CALL, operandFromSymbol (addrspace->addressmod[0]), 0);
+
+  IC_RESULT (newic) = newiTempOperand (newVoidLink (), 1);
+  newic->filename = ic->filename;
+  newic->lineno = ic->lineno;
+  newic->block = ic->block;
+
+  newic->next = ic;
+  newic->prev = ic->prev;
+  if (ic->prev)
+    ic->prev->next = newic;
+  ic->prev = newic;
+}
+
 /*-----------------------------------------------------------------*/
 /* switchAddressSpaces - insert instructions for bank switching    */
+/* This is just a fallback, in case the optimal approach fails -   */
+/* improbable, but possible depending on sdcc options and code.    */
 /*-----------------------------------------------------------------*/
 static void
 switchAddressSpaces (iCode *ic)
 {
   const symbol *oldaddrspace = 0;
 
-  /* TODO: Do this optimally (will probably require use of tree-decompositions). */
   for (; ic; ic = ic->next)
     {
-      iCode *newic;
-      operand *left, *right, *result;
-      const symbol *leftaddrspace = 0, *rightaddrspace = 0, *resultaddrspace = 0;
-      const symbol *addrspace = 0;
-      
-      left = IC_LEFT (ic);
-      right = IC_RIGHT (ic);
-      result = IC_RESULT (ic);
-
-      /* Previous transformations in separateAddressSpaces() should
-         ensure that at most one addressspace occours in each iCode. */
-       if (left && IS_SYMOP (left))
-            { 
-              if (POINTER_GET (ic))
-                {
-                  assert (!(IS_DECL (OP_SYMBOL (left)->type) && DCL_PTR_ADDRSPACE (OP_SYMBOL (left)->type)));
-                  leftaddrspace = getAddrspace (OP_SYMBOL (left)->type->next);
-                }
-              else
-                leftaddrspace = getAddrspace (OP_SYMBOL (left)->type);
-            }
-          if (right && IS_SYMOP (right))
-            rightaddrspace = getAddrspace (OP_SYMBOL (right)->type);
-          if (result && IS_SYMOP (result))
-            { 
-              if (POINTER_SET (ic))
-                {
-                  assert (!(IS_DECL (OP_SYMBOL (result)->type) && DCL_PTR_ADDRSPACE (OP_SYMBOL (result)->type)));
-                  resultaddrspace = getAddrspace (OP_SYMBOL (result)->type->next);
-                }
-              else
-                resultaddrspace = getAddrspace (OP_SYMBOL (result)->type);
-            }
-            
-      addrspace = leftaddrspace;
-      if (rightaddrspace)
-        {
-          wassertl (!addrspace || addrspace == rightaddrspace, "Multiple named address spaces in icode");
-          addrspace = rightaddrspace;
-        }
-      if (resultaddrspace)
-        {
-          wassertl (!addrspace || addrspace == resultaddrspace, "Multiple named address spaces in icode");
-          addrspace = resultaddrspace;
-        }
+      const symbol *const addrspace = getAddrspaceiCode (ic);
  
       if (addrspace && addrspace != oldaddrspace)
         { 
-          newic = newiCode (CALL, operandFromSymbol (addrspace->addressmod[0]), 0);
-          IC_RESULT (newic) = newiTempOperand (newVoidLink (), 1);
-          newic->filename = ic->filename;
-          newic->lineno = ic->lineno;
-
-          newic->next = ic;
-          newic->prev = ic->prev;
-          if (ic->prev)
-            ic->prev->next = newic;
-          ic->prev = newic;
+          switchAddressSpaceAt (ic, addrspace);
           
           oldaddrspace = addrspace;
         }
@@ -1424,6 +1448,9 @@ replaceRegEqv (ebbIndex * ebbi)
   for (i = 0; i < count; i++)
     {
       iCode *ic;
+      
+      if (ebbs[i]->noPath)
+        continue;
 
       for (ic = ebbs[i]->sch; ic; ic = ic->next)
         {
@@ -1643,6 +1670,10 @@ killDeadCode (ebbIndex * ebbi)
 
               /* if the result is a temp & isaddr then skip */
               if (IC_RESULT (ic) && POINTER_SET (ic))
+                continue;
+
+              /* if the results address has been taken then skip */
+              if (IS_SYMOP (IC_RESULT (ic)) && OP_SYMBOL (IC_RESULT (ic))->addrtaken)
                 continue;
 
               if (POINTER_GET (ic) && IS_VOLATILE (operandType (IC_LEFT (ic))->next)
@@ -2037,13 +2068,15 @@ eBBlockFromiCode (iCode * ic)
 
   /* enforce restrictions on acesses to named address spaces */
   separateAddressSpaces (ebbi->bbOrder, ebbi->count);
-  
+
   /* insert bank switching instructions. Do it here, before the
      other support routines, since we can assume that there is no
      bank switching happening in those other support routines
      (but assume that it can happen in other functions) */
-  ic = iCodeLabelOptimize(iCodeFromeBBlock (ebbi->bbOrder, ebbi->count));
-  switchAddressSpaces (ic);
+  adjustIChain(ebbi->bbOrder, ebbi->count);
+  ic = iCodeLabelOptimize (iCodeFromeBBlock (ebbi->bbOrder, ebbi->count));
+  if(switchAddressSpacesOptimally (ic, ebbi))
+    switchAddressSpaces (ic); /* Fallback. Very unlikely to be triggered, unless --max-allocs-per-node is set to very small values or very weird control-flow graphs */
 
   /* Break down again and redo some steps to not confuse live range analysis. */
   ebbi = iCodeBreakDown (ic);

@@ -38,6 +38,14 @@ HASH    (#|%:)
 #include "common.h"
 #include "newalloc.h"
 #include "dbuf_string.h"
+/* Needed by flex 2.5.4 on NetBSD 5.0.1 sparc64 */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+/* MSVC has no unistd.h but has read() declaration in io.h */
+#if defined(_MSC_VER)
+# include <io.h>
+#endif
 
 #define TKEYWORD(token) return (isTargetKeyword(yytext) ? token :\
                                 check_type())
@@ -70,15 +78,8 @@ static void deprecated_keyword (char *yytext);
 
 %x asm
 %%
-_?"_asm"         {
+"__asm"                {
   count ();
-  if (yytext[1] != '_') /* deprecated single underscore */
-    {
-      if (!options.std_sdcc)
-        return check_type ();
-      else
-        deprecated_keyword (yytext);
-    }
   if (asmbuff.buf == NULL)
     dbuf_init (&asmbuff, INITIAL_INLINEASM);
   else
@@ -86,131 +87,89 @@ _?"_asm"         {
 
   BEGIN (asm);
 }
-<asm>_?"_endasm" {
+<asm>"__endasm"        {
   count ();
-  if (yytext[1] != '_') /* deprecated single underscore */
-    {
-      if (!options.std_sdcc)
-        dbuf_append_str (&asmbuff, yytext);
-      else
-        {
-          deprecated_keyword (yytext);
-          yylval.yyinline = dbuf_c_str (&asmbuff);
-          BEGIN (INITIAL);
-          return INLINEASM;
-        }
-    }
-  else
-    {
-      yylval.yyinline = dbuf_c_str (&asmbuff);
-      BEGIN (INITIAL);
-      return INLINEASM;
-    }
+  yylval.yyinline = dbuf_c_str (&asmbuff);
+  BEGIN (INITIAL);
+  return INLINEASM;
 }
-<asm>\n        {
+<asm>\n                 {
   count ();
   dbuf_append_char(&asmbuff, *yytext);
 }
-<asm>.         {
+<asm>.                  {
   dbuf_append_char(&asmbuff, *yytext);
 }
-"at"           { count (); TKEYWORDSDCC (AT); }
-"__at"         { count (); TKEYWORD (AT); }
-"auto"         { count (); return AUTO; }
-"bit"          { count (); TKEYWORDSDCC (BIT); }
-"__bit"        { count (); TKEYWORD (BIT); }
-"_Bool"        { count (); TKEYWORD99 (SD_BOOL); }
-"break"        { count (); return BREAK; }
-"case"         { count (); return CASE; }
-"char"         { count (); return SD_CHAR; }
-"code"         { count (); TKEYWORDSDCC (CODE); }
-"__code"       { count (); TKEYWORD (CODE); }
-"const"        { count (); return SD_CONST; }
-"continue"     { count (); return CONTINUE; }
-"critical"     { count (); TKEYWORDSDCC (CRITICAL); }
-"__critical"   { count (); TKEYWORD (CRITICAL); }
-"data"         { count (); TKEYWORDSDCC (DATA); }
-"__data"       { count (); TKEYWORD (DATA); }
-"default"      { count (); return DEFAULT; }
-"do"           { count (); return DO; }
-"double"       { count (); werror (W_DOUBLE_UNSUPPORTED); return SD_FLOAT; }
-"else"         { count (); return ELSE; }
-"enum"         { count (); return ENUM; }
-"extern"       { count (); return EXTERN; }
-"far"          { count (); TKEYWORDSDCC (XDATA); }
-"__far"        { count (); TKEYWORD (XDATA); }
-"eeprom"       { count (); TKEYWORDSDCC (EEPROM); }
-"__eeprom"     { count (); TKEYWORD (EEPROM); }
-"float"        { count (); return SD_FLOAT; }
-"fixed16x16"   { count (); TKEYWORDSDCC (FIXED16X16); }
-"__fixed16x16" { count (); TKEYWORD (FIXED16X16); }
-"flash"        { count (); TKEYWORDSDCC (CODE); }
-"__flash"      { count (); TKEYWORD (CODE); }
-"for"          { count (); return FOR; }
-"goto"         { count (); return GOTO; }
-"idata"        { count (); TKEYWORDSDCC (IDATA); }
-"__idata"      { count (); TKEYWORD (IDATA); }
-"if"           { count (); return IF; }
-"int"          { count (); return SD_INT; }
-"interrupt"    { count (); TKEYWORDSDCC (INTERRUPT); }
-"__interrupt"  { count (); TKEYWORD (INTERRUPT); }
-"nonbanked"    { count (); TKEYWORDSDCC (NONBANKED); }
-"__nonbanked"  { count (); TKEYWORD (NONBANKED); }
-"banked"       { count (); TKEYWORDSDCC (BANKED); }
-"__banked"     { count (); TKEYWORD (BANKED); }
-"long"         { count (); return SD_LONG; }
-"near"         { count (); TKEYWORDSDCC (DATA); }
-"__near"       { count (); TKEYWORD (DATA); }
-"pdata"        { count (); TKEYWORDSDCC (PDATA); }
-"__pdata"      { count (); TKEYWORD (PDATA); }
-"reentrant"    { count (); TKEYWORDSDCC (REENTRANT); }
-"__reentrant"  { count (); TKEYWORD (REENTRANT); }
-"shadowregs"   { count (); TKEYWORDSDCC (SHADOWREGS); }
-"__shadowregs" { count (); TKEYWORD (SHADOWREGS); }
-"wparam"       { count (); TKEYWORDSDCC (SD_WPARAM); }
-"__wparam"     { count (); TKEYWORD (SD_WPARAM); }
-"register"     { count (); return REGISTER; }
-"return"       { count (); return RETURN; }
-"sfr"          { count (); TKEYWORDSDCC (SFR); }
-"__sfr"        { count (); TKEYWORD (SFR); }
-"sfr16"        { count (); TKEYWORDSDCC (SFR16); }
-"__sfr16"      { count (); TKEYWORD (SFR16); }
-"sfr32"        { count (); TKEYWORDSDCC (SFR32); }
-"__sfr32"      { count (); TKEYWORD (SFR32); }
-"sbit"         { count (); TKEYWORDSDCC (SBIT); }
-"__sbit"       { count (); TKEYWORD (SBIT); }
-"short"        { count (); return SD_SHORT; }
-"signed"       { count (); return SIGNED; }
-"sizeof"       { count (); return SIZEOF; }
-"__builtin_offsetof" { count (); return OFFSETOF; }
-"sram"         { count (); TKEYWORDSDCC (XDATA); }
-"__sram"       { count (); TKEYWORD (XDATA); }
-"static"       { count (); return STATIC; }
-"struct"       { count (); return STRUCT; }
-"switch"       { count (); return SWITCH; }
-"typedef"      { count (); return TYPEDEF; }
-"union"        { count (); return UNION; }
-"unsigned"     { count (); return UNSIGNED; }
-"void"         { count (); return SD_VOID; }
-"volatile"     { count (); return VOLATILE; }
-"using"        { count (); TKEYWORDSDCC (USING); }
-"__using"      { count (); TKEYWORD (USING); }
-"_naked"       { count (); TKEYWORDSDCC (NAKED); }
-"__naked"      { count (); TKEYWORD (NAKED); }
-"while"        { count (); return WHILE; }
-"xdata"        { count (); TKEYWORDSDCC (XDATA); }
-"__xdata"      { count (); TKEYWORD (XDATA); }
-"..."          { count (); return VAR_ARGS; }
-"__typeof"     { count (); return TYPEOF; }
-"_JavaNative"  { count (); TKEYWORD (JAVANATIVE); }
-"_overlay"     { count (); TKEYWORDSDCC (OVERLAY); }
-"__overlay"    { count (); TKEYWORD (OVERLAY); }
-"inline"       { count (); TKEYWORD99 (INLINE); }
-"_Noreturn"    { count (); return NORETURN;}
-"restrict"     { count (); TKEYWORD99 (RESTRICT); }
-"__smallc"     { count (); return SMALLC; }
-"__addressmod" { count (); return ADDRESSMOD; }
-{L}({L}|{D})*  {
+"__at"                  { count (); TKEYWORD (AT); }
+"auto"                  { count (); return AUTO; }
+"__bit"                 { count (); TKEYWORD (BIT); }
+"_Bool"                 { count (); TKEYWORD99 (SD_BOOL); }
+"break"                 { count (); return BREAK; }
+"case"                  { count (); return CASE; }
+"char"                  { count (); return SD_CHAR; }
+"__code"                { count (); TKEYWORD (CODE); }
+"const"                 { count (); return SD_CONST; }
+"continue"              { count (); return CONTINUE; }
+"__critical"            { count (); TKEYWORD (CRITICAL); }
+"__data"                { count (); TKEYWORD (DATA); }
+"default"               { count (); return DEFAULT; }
+"do"                    { count (); return DO; }
+"double"                { count (); werror (W_DOUBLE_UNSUPPORTED); return SD_FLOAT; }
+"else"                  { count (); return ELSE; }
+"enum"                  { count (); return ENUM; }
+"extern"                { count (); return EXTERN; }
+"__far"                 { count (); TKEYWORD (XDATA); }
+"__eeprom"              { count (); TKEYWORD (EEPROM); }
+"float"                 { count (); return SD_FLOAT; }
+"__fixed16x16"          { count (); TKEYWORD (FIXED16X16); }
+"__flash"               { count (); TKEYWORD (CODE); }
+"for"                   { count (); return FOR; }
+"goto"                  { count (); return GOTO; }
+"__idata"               { count (); TKEYWORD (IDATA); }
+"if"                    { count (); return IF; }
+"int"                   { count (); return SD_INT; }
+"__interrupt"           { count (); TKEYWORD (INTERRUPT); }
+"__nonbanked"           { count (); TKEYWORD (NONBANKED); }
+"__banked"              { count (); TKEYWORD (BANKED); }
+"long"                  { count (); return SD_LONG; }
+"__near"                { count (); TKEYWORD (DATA); }
+"__pdata"               { count (); TKEYWORD (PDATA); }
+"__reentrant"           { count (); TKEYWORD (REENTRANT); }
+"__shadowregs"          { count (); TKEYWORD (SHADOWREGS); }
+"__wparam"              { count (); TKEYWORD (SD_WPARAM); }
+"register"              { count (); return REGISTER; }
+"return"                { count (); return RETURN; }
+"__sfr"                 { count (); TKEYWORD (SFR); }
+"__sfr16"               { count (); TKEYWORD (SFR16); }
+"__sfr32"               { count (); TKEYWORD (SFR32); }
+"__sbit"                { count (); TKEYWORD (SBIT); }
+"short"                 { count (); return SD_SHORT; }
+"signed"                { count (); return SIGNED; }
+"sizeof"                { count (); return SIZEOF; }
+"__builtin_offsetof"    { count (); return OFFSETOF; }
+"__sram"                { count (); TKEYWORD (XDATA); }
+"static"                { count (); return STATIC; }
+"struct"                { count (); return STRUCT; }
+"switch"                { count (); return SWITCH; }
+"typedef"               { count (); return TYPEDEF; }
+"union"                 { count (); return UNION; }
+"unsigned"              { count (); return UNSIGNED; }
+"void"                  { count (); return SD_VOID; }
+"volatile"              { count (); return VOLATILE; }
+"__using"               { count (); TKEYWORD (USING); }
+"__naked"               { count (); TKEYWORD (NAKED); }
+"while"                 { count (); return WHILE; }
+"__xdata"               { count (); TKEYWORD (XDATA); }
+"..."                   { count (); return VAR_ARGS; }
+"__typeof"              { count (); return TYPEOF; }
+"_JavaNative"           { count (); TKEYWORD (JAVANATIVE); }
+"__overlay"             { count (); TKEYWORD (OVERLAY); }
+"inline"                { count (); TKEYWORD99 (INLINE); }
+"_Noreturn"             { count (); return NORETURN;}
+"restrict"              { count (); TKEYWORD99 (RESTRICT); }
+"__smallc"              { count (); return SMALLC; }
+"__addressmod"          { count (); return ADDRESSMOD; }
+{L}({L}|{D})*           {
   if (!options.dollars_in_ident && strchr (yytext, '$'))
     {
       yyerror ("stray '$' in program");
@@ -218,7 +177,7 @@ _?"_asm"         {
   count ();
   return check_type();
 }
-0[bB]{B}+{IS}? {
+0[bB]{B}+{IS}?          {
   if (!options.std_sdcc)
     {
       yyerror ("binary (0b) constants are not allowed in ISO C");
@@ -227,68 +186,66 @@ _?"_asm"         {
   yylval.val = constVal (yytext);
   return CONSTANT;
 }
-0[xX]{H}+{IS}? { count (); yylval.val = constVal (yytext); return CONSTANT; }
-0[0-7]*{IS}?     { count (); yylval.val = constVal (yytext); return CONSTANT; }
-[1-9]{D}*{IS}?      { count (); yylval.val = constVal (yytext); return CONSTANT; }
-'(\\.|[^\\'])+' { count (); yylval.val = charVal (yytext); return CONSTANT; /* ' make syntax highliter happy */ }
-{D}+{E}{FS}?   { count (); yylval.val = constFloatVal (yytext);return CONSTANT; }
-{D}*"."{D}+({E})?{FS}?  { count (); yylval.val = constFloatVal (yytext);return CONSTANT; }
-{D}+"."{D}*({E})?{FS}?  { count (); yylval.val = constFloatVal (yytext);return CONSTANT; }
-\"             { count (); yylval.val = strVal (stringLiteral ()); return STRING_LITERAL; }
-">>="          { count (); yylval.yyint = RIGHT_ASSIGN; return RIGHT_ASSIGN; }
-"<<="          { count (); yylval.yyint = LEFT_ASSIGN; return LEFT_ASSIGN; }
-"+="           { count (); yylval.yyint = ADD_ASSIGN; return ADD_ASSIGN; }
-"-="           { count (); yylval.yyint = SUB_ASSIGN; return SUB_ASSIGN; }
-"*="           { count (); yylval.yyint = MUL_ASSIGN; return MUL_ASSIGN; }
-"/="           { count (); yylval.yyint = DIV_ASSIGN; return DIV_ASSIGN; }
-"%="           { count (); yylval.yyint = MOD_ASSIGN; return MOD_ASSIGN; }
-"&="           { count (); yylval.yyint = AND_ASSIGN; return AND_ASSIGN; }
-"^="           { count (); yylval.yyint = XOR_ASSIGN; return XOR_ASSIGN; }
-"|="           { count (); yylval.yyint = OR_ASSIGN; return OR_ASSIGN; }
-">>"           { count (); return RIGHT_OP; }
-"<<"           { count (); return LEFT_OP; }
-"++"           { count (); return INC_OP; }
-"--"           { count (); return DEC_OP; }
-"->"           { count (); return PTR_OP; }
-"&&"           { count (); return AND_OP; }
-"||"           { count (); return OR_OP; }
-"<="           { count (); return LE_OP; }
-">="           { count (); return GE_OP; }
-"=="           { count (); return EQ_OP; }
-"!="           { count (); return NE_OP; }
-";"            { count (); return ';'; }
-"{"|"<%"       { count (); ++NestLevel; ignoreTypedefType = 0; return '{'; }
-"}"|"%>"       { count (); --NestLevel; return '}'; }
-","            { count (); return ','; }
-":"            { count (); return ':'; }
-"="            { count (); return '='; }
-"("            { count (); ignoreTypedefType = 0; return '('; }
-")"            { count (); return ')'; }
-"["|"<:"       { count (); return '['; }
-"]"|":>"       { count (); return ']'; }
-"."            { count (); return '.'; }
-"&"            { count (); return '&'; }
-"!"            { count (); return '!'; }
-"~"            { count (); return '~'; }
-"-"            { count (); return '-'; }
-"+"            { count (); return '+'; }
-"*"            { count (); return '*'; }
-"/"            { count (); return '/'; }
-"%"            { count (); return '%'; }
-"<"            { count (); return '<'; }
-">"            { count (); return '>'; }
-"^"            { count (); return '^'; }
-"|"            { count (); return '|'; }
-"?"            { count (); return '?'; }
-^{HASH}pragma.*$    { count (); process_pragma (yytext); }
-^({HASH}line.*"\n")|({HASH}.*"\n") { count (); checkCurrFile (yytext); }
+0[xX]{H}+{IS}?          { count (); yylval.val = constVal (yytext); return CONSTANT; }
+0[0-7]*{IS}?            { count (); yylval.val = constVal (yytext); return CONSTANT; }
+[1-9]{D}*{IS}?          { count (); yylval.val = constVal (yytext); return CONSTANT; }
+'(\\.|[^\\'])+'         { count (); yylval.val = charVal (yytext); return CONSTANT; /* ' make syntax highliter happy */ }
+{D}+{E}{FS}?            { count (); yylval.val = constFloatVal (yytext); return CONSTANT; }
+{D}*"."{D}+({E})?{FS}?  { count (); yylval.val = constFloatVal (yytext); return CONSTANT; }
+{D}+"."{D}*({E})?{FS}?  { count (); yylval.val = constFloatVal (yytext); return CONSTANT; }
+\"                      { count (); yylval.val = strVal (stringLiteral ()); return STRING_LITERAL; }
+">>="                   { count (); yylval.yyint = RIGHT_ASSIGN; return RIGHT_ASSIGN; }
+"<<="                   { count (); yylval.yyint = LEFT_ASSIGN; return LEFT_ASSIGN; }
+"+="                    { count (); yylval.yyint = ADD_ASSIGN; return ADD_ASSIGN; }
+"-="                    { count (); yylval.yyint = SUB_ASSIGN; return SUB_ASSIGN; }
+"*="                    { count (); yylval.yyint = MUL_ASSIGN; return MUL_ASSIGN; }
+"/="                    { count (); yylval.yyint = DIV_ASSIGN; return DIV_ASSIGN; }
+"%="                    { count (); yylval.yyint = MOD_ASSIGN; return MOD_ASSIGN; }
+"&="                    { count (); yylval.yyint = AND_ASSIGN; return AND_ASSIGN; }
+"^="                    { count (); yylval.yyint = XOR_ASSIGN; return XOR_ASSIGN; }
+"|="                    { count (); yylval.yyint = OR_ASSIGN; return OR_ASSIGN; }
+">>"                    { count (); return RIGHT_OP; }
+"<<"                    { count (); return LEFT_OP; }
+"++"                    { count (); return INC_OP; }
+"--"                    { count (); return DEC_OP; }
+"->"                    { count (); return PTR_OP; }
+"&&"                    { count (); return AND_OP; }
+"||"                    { count (); return OR_OP; }
+"<="                    { count (); return LE_OP; }
+">="                    { count (); return GE_OP; }
+"=="                    { count (); return EQ_OP; }
+"!="                    { count (); return NE_OP; }
+";"                     { count (); return ';'; }
+"{"|"<%"                { count (); ignoreTypedefType = 0; return '{'; }
+"}"|"%>"                { count (); return '}'; }
+","                     { count (); return ','; }
+":"                     { count (); return ':'; }
+"="                     { count (); return '='; }
+"("                     { count (); ignoreTypedefType = 0; return '('; }
+")"                     { count (); return ')'; }
+"["|"<:"                { count (); return '['; }
+"]"|":>"                { count (); return ']'; }
+"."                     { count (); return '.'; }
+"&"                     { count (); return '&'; }
+"!"                     { count (); return '!'; }
+"~"                     { count (); return '~'; }
+"-"                     { count (); return '-'; }
+"+"                     { count (); return '+'; }
+"*"                     { count (); return '*'; }
+"/"                     { count (); return '/'; }
+"%"                     { count (); return '%'; }
+"<"                     { count (); return '<'; }
+">"                     { count (); return '>'; }
+"^"                     { count (); return '^'; }
+"|"                     { count (); return '|'; }
+"?"                     { count (); return '?'; }
+^{HASH}pragma.*         { count (); process_pragma (yytext); }
+^{HASH}.*               { count (); checkCurrFile (yytext); }
 
-^[^(]+"("[0-9]+") : error"[^\n]+ { werror (E_PRE_PROC_FAILED, yytext); count (); }
-^[^(]+"("[0-9]+") : warning"[^\n]+ { werror (W_PRE_PROC_WARNING, yytext); count (); }
-"\r\n"         { count (); }
-"\n"           { count (); }
-[ \t\v\f]      { count (); }
-\\ {
+"\r\n"                  { count (); }
+"\n"                    { count (); }
+[ \t\v\f]               { count (); }
+\\                      {
   int ch = input ();
 
   if (ch == '\n')
@@ -300,28 +257,13 @@ _?"_asm"         {
       unput (ch);
     }
 }
-.              { count (); }
+.                       { count (); }
 %%
 
 /* flex 2.5.31 undefines yytext_ptr, so we have to define it again */
 #ifndef yytext_ptr
 #define yytext_ptr yytext
 #endif
-
-static void
-deprecated_keyword (char *yytext)
-{
-  struct dbuf_s dbuf;
-
-  dbuf_init (&dbuf, 32);
-
-  dbuf_append_char (&dbuf, '_');
-  if ('_' != yytext[0])
-    dbuf_append_char (&dbuf, '_');
-  dbuf_append_str (&dbuf, yytext);
-  werror (W_DEPRECATED_KEYWORD, yytext, dbuf_c_str(&dbuf));
-  dbuf_destroy (&dbuf);
-}
 
 static int
 checkCurrFile (const char *s)
@@ -333,14 +275,6 @@ checkCurrFile (const char *s)
   if (*s++ != '#')
     return 0;
 
-  /* check if this is a #line
-    this is not standard and can be removed in the future */
-#define LINE_STR  "line"
-#define LINE_LEN  ((sizeof LINE_STR) - 1)
-
-  if (strncmp(s, LINE_STR, LINE_LEN) == 0)
-    s += LINE_LEN;
-
   /* get the line number */
   lNum = strtol(s, &tptr, 10);
   if (tptr == s || !isspace((unsigned char)*tptr))
@@ -348,7 +282,7 @@ checkCurrFile (const char *s)
   s = tptr;
 
   /* adjust the line number */
-  lineno = lexLineno = lNum;
+  lineno = lexLineno = lNum - 1;
 
   /* now see if we have a file name */
   while (*s != '"' && *s)
@@ -439,7 +373,7 @@ check_type (void)
 }
 
 /*
- * Change by JTV 2001-05-19 to not concantenate strings
+ * Change by JTV 2001-05-19 to not concatenate strings
  * to support ANSI hex and octal escape sequences in string literals
  */
 

@@ -24,8 +24,15 @@
 -------------------------------------------------------------------------*/
 
 #include "common.h"
+#include "SDCCbtree.h"
 #include "ralloc.h"
 #include "gen.h"
+
+#define SALLOC_CH (options.salloc == 1 || options.salloc == 2) // Chaitin
+#define SALLOC_CHA (options.salloc == 2) // Chaitin with alignment
+#define SALLOC_TD (options.salloc == 3 || options.salloc == 4 || options.salloc == 5)
+#define SALLOC_TDS (options.salloc == 3) // Simplified
+#define SALLOC_TDR (options.salloc == 5) // With greedy post-recoloring.
 
 /*-----------------------------------------------------------------*/
 /* At this point we start getting processor specific although      */
@@ -536,12 +543,13 @@ createStackSpil (symbol * sym)
 
   /* first go try and find a free one that is already
      existing on the stack */
-  if (applyToSet (_G.stackSpil, isFree, &sloc, sym))
+  if (!SALLOC_TD && !SALLOC_CH && applyToSet (_G.stackSpil, isFree, &sloc, sym))
     {
       /* found a free one : just update & return */
       sym->usl.spillLoc = sloc;
       sym->stackSpil = 1;
       sloc->isFree = 0;
+      sloc->block = btree_lowest_common_ancestor(sloc->block, sym->block);
       addSetHead (&sloc->usl.itmpStack, sym);
       return sym;
     }
@@ -562,6 +570,7 @@ createStackSpil (symbol * sym)
   /* set the type to the spilling symbol */
   sloc->type = copyLinkChain (sym->type);
   sloc->etype = getSpec (sloc->type);
+  sloc->block = sym->block;
   SPEC_SCLS (sloc->etype) = S_DATA;
   SPEC_EXTR (sloc->etype) = 0;
   SPEC_STAT (sloc->etype) = 0;
@@ -645,7 +654,7 @@ spillThis (symbol * sym)
   /* if this is rematerializable or has a spillLocation
      we are okay, else we need to create a spillLocation
      for it */
-  if (!(sym->remat || sym->usl.spillLoc))
+  if (!(sym->remat || (!SALLOC_TD && !SALLOC_CH && sym->usl.spillLoc)))
     createStackSpil (sym);
 
   /* mark it as spilt & put it in the spilt set */
@@ -1292,6 +1301,9 @@ serialRegAssign (eBBlock ** ebbs, int count)
                   spillThis (sym);
                   continue;
                 }
+
+              sym->for_newralloc = 1;
+
               /* if trying to allocate this will cause
                  a spill and there is nothing to spill
                  or this one is rematerializable then
@@ -3173,6 +3185,7 @@ hc08_assignRegisters (ebbIndex * ebbi)
      for each of the instruction */
   createRegMask (ebbs, count);
 
+#if 0
   /* redo that offsets for stacked automatic variables */
   if (currFunc)
     {
@@ -3190,6 +3203,18 @@ hc08_assignRegisters (ebbIndex * ebbi)
 
   /* now get back the chain */
   ic = iCodeLabelOptimize (iCodeFromeBBlock (ebbs, count));
+#else
+  ic = hc08_ralloc2_cc(ebbi);
+
+  if (options.dump_rassgn)
+    {
+      dumpEbbsToFileExt (DUMP_RASSGN, ebbi);
+      dumpLiveRanges (DUMP_LRANGE, liveRanges);
+    }
+
+  /* do the overlaysegment stuff SDCCmem.c */
+  doOverlays (ebbs, count);
+#endif
 
   genhc08Code (ic);
 

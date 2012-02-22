@@ -117,9 +117,8 @@ static OPTION _hc08_options[] =
 static void
 _hc08_finaliseOptions (void)
 {
-  if (options.noXinitOpt) {
-    port->genXINIT=0;
-  }
+  if (options.noXinitOpt)
+    port->genXINIT = 0;
 
   if (options.model == MODEL_LARGE) {
       port->mem.default_local_map = xdata;
@@ -145,6 +144,8 @@ _hc08_setDefaultOptions (void)
 
   options.omitFramePtr = 1;     /* no frame pointer (we use SP */
                                 /* offsets instead)            */
+
+  options.stackAuto = 1;
 }
 
 static const char *
@@ -172,7 +173,6 @@ _hc08_genAssemblerPreamble (FILE * of)
   fprintf (of, "\t.area %s\n",port->mem.const_name);
   fprintf (of, "\t.area %s\n",port->mem.data_name);
   fprintf (of, "\t.area %s\n",port->mem.overlay_name);
-  fprintf (of, "\t.area %s\n",port->mem.bit_name);
   fprintf (of, "\t.area %s\n",port->mem.xdata_name);
   fprintf (of, "\t.area %s\n",port->mem.xidata_name);
 
@@ -318,6 +318,9 @@ hasExtBitOp (int op, int size)
       || op == RLC
       || op == GETHBIT
       || (op == SWAP && size <= 2)
+      || op == GETABIT
+      || op == GETBYTE
+      || op == GETWORD
      )
     return TRUE;
   else
@@ -420,7 +423,6 @@ PORT hc08_port =
   },
   /* tags for generic pointers */
   { 0x00, 0x40, 0x60, 0x80 },           /* far, near, xstack, code */
-
   {
     "XSEG",
     "STACK",
@@ -429,14 +431,14 @@ PORT hc08_port =
     NULL, /* "ISEG" */
     NULL, /* "PSEG" */
     "XSEG",
-    "BSEG",
+    NULL, /* "BSEG" */
     "RSEG    (ABS)",
     "GSINIT  (CODE)",
     "OSEG    (PAG, OVR)",
     "GSFINAL (CODE)",
     "HOME    (CODE)",
-    "XISEG", // initialized xdata
-    "XINIT", // a code copy of xiseg
+    "XISEG",              // initialized xdata
+    "XINIT",              // a code copy of xiseg
     "CONST   (CODE)",     // const_name - const data (code or not)
     "CABS    (ABS,CODE)", // cabs_name - const absolute data (code or not)
     "XABS    (ABS)",      // xabs_name - absolute xdata

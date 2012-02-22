@@ -30,7 +30,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, s
 
 static btree_t btree;
 
-void btree_init(void)
+void btree_init()
 {
   btree.clear();
   boost::add_vertex(btree);
@@ -55,6 +55,9 @@ short btree_lowest_common_ancestor(short a, short b)
 
 void btree_add_symbol(struct symbol *s)
 {
+  wassert(s);
+  wassert(s->block >= 0);
+  wassert(s->block < boost::num_vertices(btree));
   btree[s->block].first.insert(s);
 }
 

@@ -272,8 +272,9 @@ findSymWithLevel (bucket ** stab, symbol * sym)
           /* if levels match then block numbers should also match */
           if (bp->level && bp->level == sym->level && bp->block == sym->block)
             return (bp->sym);
-          /* if levels don't match then we are okay */
-          if (bp->level && bp->level != sym->level && bp->block <= sym->block)
+          /* if levels don't match then we are okay if the symbol is in scope */
+          if (bp->level && bp->level != sym->level && bp->block <= sym->block
+              && ((symbol *) (bp->sym))->isinscope)
             return (bp->sym);
           /* if this is a global variable then we are ok too */
           if (bp->level == 0)
@@ -287,7 +288,7 @@ findSymWithLevel (bucket ** stab, symbol * sym)
 }
 
 /*-----------------------------------------------------------------*/
-/* findSymWithBlock - finds a symbol with name in with a block     */
+/* findSymWithBlock - finds a symbol with name in a block          */
 /*-----------------------------------------------------------------*/
 void *
 findSymWithBlock (bucket ** stab, symbol * sym, int block)
@@ -321,6 +322,7 @@ newSymbol (const char *name, int scope)
   sym->lineDef = lexLineno;     /* set the line number */
   sym->fileDef = lexFilename;
   sym->for_newralloc = 0;
+  sym->isinscope = 1;
   return sym;
 }
 
@@ -1027,8 +1029,6 @@ getSize (sym_link * p)
         }
       else
         {
-          //    werror (E_INTERNAL_ERROR, __FILE__, __LINE__,
-          //    "can not tell the size of an array[]");
           return 0;
         }
     case IPOINTER:
@@ -1265,6 +1265,12 @@ addSymChain (symbol ** symHead)
     {
       changePointer (sym->type);
       checkTypeSanity (sym->etype, sym->name);
+
+      if (IS_NORETURN (sym->etype))
+        {
+          SPEC_NORETURN (sym->etype) = 0;
+          FUNC_ISNORETURN (sym->type) = 1;
+        }
 
       if (!sym->level && !(IS_SPEC (sym->etype) && IS_TYPEDEF (sym->etype)))
         elemsFromIval = checkDecl (sym, 0);
@@ -1766,7 +1772,7 @@ checkSClass (symbol * sym, int isProto)
 
   /* global variables declared const put into code */
   /* if no other storage class specified */
-  if (sym->level == 0 && SPEC_SCLS (sym->etype) == S_FIXED && !IS_FUNC (sym->type))
+  if ((sym->level == 0 || SPEC_STAT(sym->etype)) && SPEC_SCLS (sym->etype) == S_FIXED && !IS_FUNC (sym->type))
     {
       /* find the first non-array link */
       t = sym->type;
@@ -1777,7 +1783,7 @@ checkSClass (symbol * sym, int isProto)
     }
 
   /* global variable in code space is a constant */
-  if (sym->level == 0 && SPEC_SCLS (sym->etype) == S_CODE && port->mem.code_ro)
+  if ((sym->level == 0 || SPEC_STAT(sym->etype)) && SPEC_SCLS (sym->etype) == S_CODE && port->mem.code_ro)
     {
       /* find the first non-array link */
       t = sym->type;
@@ -1885,15 +1891,6 @@ checkSClass (symbol * sym, int isProto)
       if (options.stackAuto || (currFunc && IFFUNC_ISREENT (currFunc->type)))
         {
           SPEC_SCLS (sym->etype) = (options.useXstack ? S_XSTACK : S_STACK);
-        }
-      else
-        {
-          /* hack-o-matic! I see no reason why the useXstack option should ever
-           * control this allocation, but the code was originally that way, and
-           * changing it for non-390 ports breaks the compiler badly.
-           */
-          bool useXdata = (TARGET_IS_DS390 || TARGET_IS_DS400) ? 1 : options.useXstack;
-          SPEC_SCLS (sym->etype) = (useXdata ? S_XDATA : S_FIXED);
         }
     }
 }

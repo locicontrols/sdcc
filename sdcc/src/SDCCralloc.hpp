@@ -57,13 +57,14 @@ extern "C"
 #include "SDCCicode.h"
 #include "SDCCBBlock.h"
 #include "SDCCbtree.h"
+#include "SDCCopt.h"
+#include "SDCClrange.h"
+#include "SDCCy.h"
 
-#include "z80.h"
+#include "port.h"
 #include "ralloc.h"
 
 iCode *ifxForOp (operand *op, const iCode *ic); // Todo: Move this port-dependency somewhere else!
-
-bool assignment_optimal;
 }
 
 #ifdef HAVE_STX_BTREE_SET_H
@@ -77,7 +78,7 @@ typedef short int var_t;
 typedef signed char reg_t;
 
 // Todo: Move this port-dependency somewehere else?
-#define NUM_REGS ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) ? (4 + (OPTRALLOC_A ? 1 : 0) + (OPTRALLOC_HL ? 2 : 0) + (OPTRALLOC_IY ? 2 : 0)) : (TARGET_IS_GBZ80 ? 3 : 0))
+#define NUM_REGS ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) ? 9 : ((TARGET_IS_GBZ80 || TARGET_IS_HC08)? 3 : 0))
 // Upper bound on NUM_REGS
 #define MAX_NUM_REGS 9
 
@@ -251,7 +252,9 @@ float rough_cost_estimate(const assignment &a, unsigned short int i, const G_t &
 
 // Avoid overwriting operands that are still needed by the result. Port-specific.
 template <class I_t> void
-add_operand_conflicts_in_node(const cfg_node &n, I_t &I);
+z80_add_operand_conflicts_in_node(const cfg_node &n, I_t &I);
+template <class I_t> void
+hc08_add_operand_conflicts_in_node(const cfg_node &n, I_t &I);
 
 inline void
 add_operand_to_cfg_node(cfg_node &n, operand *o, std::map<std::pair<int, reg_t>, var_t> &sym_to_index)
@@ -277,6 +280,7 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
   std::map<std::pair<int, reg_t>, var_t> sym_to_index;
 
   start_ic = iCodeLabelOptimize(iCodeFromeBBlock (ebbs, ebbi->count));
+
   //start_ic = joinPushes(start_ic);
   {
     int i;
@@ -296,7 +300,7 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
         if(ic->op == '>' || ic->op == '<' || ic->op == EQ_OP || ic->op == '^' || ic->op == '|' || ic->op == BITWISEAND)
           {
             iCode *ifx;
-            if (ifx = ifxForOp (IC_RESULT (ic), ic))
+            if (!TARGET_IS_HC08 && (ifx = ifxForOp (IC_RESULT (ic), ic))) // Todo: Have a look at this for hc08 again when using the new register allocator. For now (stack allcoator only) it works this way.
               ifx->generated = 1;
           }
 
@@ -371,7 +375,10 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
       add_operand_to_cfg_node(cfg[key_to_index[ic->key]], IC_LEFT(ic), sym_to_index);
       add_operand_to_cfg_node(cfg[key_to_index[ic->key]], IC_RIGHT(ic), sym_to_index);
       
-      add_operand_conflicts_in_node(cfg[key_to_index[ic->key]], con);
+      if (TARGET_Z80_LIKE)
+        z80_add_operand_conflicts_in_node(cfg[key_to_index[ic->key]], con);
+      else
+        hc08_add_operand_conflicts_in_node(cfg[key_to_index[ic->key]], con);
     }
 
 #if 0
@@ -476,7 +483,7 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
             ;
         }
     }
-  
+ 
   return(start_ic);
 }
 
@@ -617,7 +624,7 @@ float compability_cost(const assignment& a, const assignment& ac, const I_t &I)
 // Ensure that we never get more than options.max_allocs_per_node assignments at a single node of the tree decomposition.
 // Tries to drop the worst ones first (but never drop the empty assignment, as it's the only one guaranteed to be always valid).
 template <class G_t, class I_t>
-void drop_worst_assignments(assignment_list_t &alist, unsigned short int i, const G_t &G, const I_t &I, const assignment& ac)
+void drop_worst_assignments(assignment_list_t &alist, unsigned short int i, const G_t &G, const I_t &I, const assignment& ac, bool *const assignment_optimal)
 {
   unsigned int n;
   size_t alist_size;
@@ -626,7 +633,7 @@ void drop_worst_assignments(assignment_list_t &alist, unsigned short int i, cons
   if ((alist_size = alist.size()) * NUM_REGS <= static_cast<size_t>(options.max_allocs_per_node) || alist_size <= 1)
     return;
 
-  assignment_optimal = false;
+  *assignment_optimal = false;
 
 #ifdef DEBUG_RALLOC_DEC
   std::cout << "Too many assignments here (" << i << "):" << alist_size << " > " << options.max_allocs_per_node / NUM_REGS << ". Dropping some.\n"; std::cout.flush();
@@ -677,7 +684,7 @@ void tree_dec_ralloc_leaf(T_t &T, typename boost::graph_traits<T_t>::vertex_desc
 
 // Handle introduce nodes in the nice tree decomposition
 template <class T_t, class G_t, class I_t>
-void tree_dec_ralloc_introduce(T_t &T, typename boost::graph_traits<T_t>::vertex_descriptor t, const G_t &G, const I_t &I, const assignment& ac)
+void tree_dec_ralloc_introduce(T_t &T, typename boost::graph_traits<T_t>::vertex_descriptor t, const G_t &G, const I_t &I, const assignment& ac, bool *const assignment_optimal)
 {
   typedef typename boost::graph_traits<T_t>::adjacency_iterator adjacency_iter_t;
   adjacency_iter_t c, c_end;
@@ -706,7 +713,7 @@ void tree_dec_ralloc_introduce(T_t &T, typename boost::graph_traits<T_t>::vertex
   std::set<var_t>::const_iterator v;
   for (v = new_vars.begin(); v != new_vars.end(); ++v)
     {
-      drop_worst_assignments(alist, i, G, I, ac);
+      drop_worst_assignments(alist, i, G, I, ac, assignment_optimal);
       assignments_introduce_variable(alist, i, *v, G, I);
     }
 
@@ -731,6 +738,7 @@ void tree_dec_ralloc_introduce(T_t &T, typename boost::graph_traits<T_t>::vertex
 #endif
 }
 
+inline static
 bool assignments_locally_same(const assignment &a1, const assignment &a2)
 {
   if (a1.local != a2.local)
@@ -909,13 +917,12 @@ void get_best_local_assignment_biased(assignment &a, typename boost::graph_trait
 
 // Handle nodes in the tree decomposition, by detecting their type and calling the appropriate function. Recurses.
 template <class T_t, class G_t, class I_t>
-void tree_dec_ralloc_nodes(T_t &T, typename boost::graph_traits<T_t>::vertex_descriptor t, const G_t &G, const I_t &I, const assignment& ac)
+void tree_dec_ralloc_nodes(T_t &T, typename boost::graph_traits<T_t>::vertex_descriptor t, const G_t &G, const I_t &I, const assignment& ac, bool *const assignment_optimal)
 {
   typedef typename boost::graph_traits<T_t>::adjacency_iterator adjacency_iter_t;
 
   adjacency_iter_t c, c_end;
   typename boost::graph_traits<T_t>::vertex_descriptor c0, c1;
-  assignment ac2;
 
   boost::tie(c, c_end) = adjacent_vertices(t, T);
 
@@ -926,15 +933,19 @@ void tree_dec_ralloc_nodes(T_t &T, typename boost::graph_traits<T_t>::vertex_des
       break;
     case 1:
       c0 = *c;
-      tree_dec_ralloc_nodes(T, c0, G, I, ac);
-      T[c0].bag.size() < T[t].bag.size() ? tree_dec_ralloc_introduce(T, t, G, I, ac) : tree_dec_ralloc_forget(T, t, G, I);
+      tree_dec_ralloc_nodes(T, c0, G, I, ac, assignment_optimal);
+      T[c0].bag.size() < T[t].bag.size() ? tree_dec_ralloc_introduce(T, t, G, I, ac, assignment_optimal) : tree_dec_ralloc_forget(T, t, G, I);
       break;
     case 2:
       c0 = *c++;
       c1 = *c;
-      tree_dec_ralloc_nodes(T, c0, G, I, ac);
-      get_best_local_assignment_biased(ac2, c0, T);
-      tree_dec_ralloc_nodes(T, c1, G, I, ac2);
+      tree_dec_ralloc_nodes(T, c0, G, I, ac, assignment_optimal);
+      {
+        assignment *ac2 = new assignment;
+        get_best_local_assignment_biased(*ac2, c0, T);
+        tree_dec_ralloc_nodes(T, c1, G, I, *ac2, assignment_optimal);
+        delete ac2;
+      }
       tree_dec_ralloc_join(T, t, G, I);
       break;
     default:
@@ -1027,8 +1038,12 @@ void good_re_root(T_t &T)
 }
 
 // Dump conflict graph, with numbered and named nodes.
+static
 void dump_con(const con_t &con)
 {
+  if(!currFunc)
+    return;
+
   std::ofstream dump_file((std::string(dstFileName) + ".dumpcon" + currFunc->rname + ".dot").c_str());
 
   std::string *name = new std::string[boost::num_vertices(con)];
@@ -1045,8 +1060,12 @@ void dump_con(const con_t &con)
 }
 
 // Dump cfg, with numbered nodes, show live variables at each node.
+static
 void dump_cfg(const cfg_t &cfg)
 {
+  if(!currFunc)
+    return;
+
   std::ofstream dump_file((std::string(dstFileName) + ".dumpcfg" + currFunc->rname + ".dot").c_str());
 
   std::string *name = new std::string[boost::num_vertices(cfg)];
@@ -1065,8 +1084,12 @@ void dump_cfg(const cfg_t &cfg)
 }
 
 // Dump tree decomposition, show bag and live variables at each node.
+static
 void dump_tree_decomposition(const tree_dec_t &tree_dec)
 {
+  if(!currFunc)
+    return;
+
   std::ofstream dump_file((std::string(dstFileName) + ".dumpdec" + currFunc->rname + ".dot").c_str());
 
   unsigned int w = 0;

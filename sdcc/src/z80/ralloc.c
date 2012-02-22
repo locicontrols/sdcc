@@ -48,6 +48,12 @@
 #include "SDCCbtree.h"
 #include "dbuf_string.h"
 
+#define SALLOC_CH (options.salloc == 1 || options.salloc == 2) // Chaitin
+#define SALLOC_CHA (options.salloc == 2) // Chaitin with alignment
+#define SALLOC_TD (options.salloc == 3 || options.salloc == 4 || options.salloc == 5)
+#define SALLOC_TDS (options.salloc == 3) // Simplified
+#define SALLOC_TDR (options.salloc == 5) // With greedy post-recoloring.
+
 /* Flags to turn off optimisations.
  */
 enum
@@ -438,19 +444,18 @@ createStackSpil (symbol * sym)
   struct dbuf_s dbuf;
 
   D (D_ALLOC, ("createStackSpil: for sym %p\n", sym));
-//printf("Creating new spilllocation.\n");
   /* first go try and find a free one that is already
      existing on the stack */
      
 
-  if (!SALLOC_TD && ! SALLOC_CH && applyToSet (_G.stackSpil, isFree, &sloc, sym))
+  if (!SALLOC_TD && !SALLOC_CH && applyToSet (_G.stackSpil, isFree, &sloc, sym))
     {
       /* found a free one : just update & return */
       sym->usl.spillLoc = sloc;
       sym->stackSpil = 1;
       sloc->isFree = 0;
-      addSetHead (&sloc->usl.itmpStack, sym);
       sloc->block = btree_lowest_common_ancestor(sloc->block, sym->block);
+      addSetHead (&sloc->usl.itmpStack, sym);
       D (D_ALLOC, ("createStackSpil: found existing\n"));
       return sym;
     }
@@ -519,9 +524,7 @@ spillThis (symbol * sym)
      we are okay, else we need to create a spillLocation
      for it */
   if (!(sym->remat || (!SALLOC_TD && !SALLOC_CH && sym->usl.spillLoc)))
-    {
-      createStackSpil (sym);
-    }
+    createStackSpil (sym);
 
   /* mark it has spilt & put it in the spilt set */
   sym->isspilt = sym->spillA = 1;
@@ -3144,7 +3147,7 @@ z80_ralloc (ebbIndex * ebbi)
 
   /* The new register allocator invokes its magic */
   ic = z80_ralloc2_cc (ebbi);
-  
+
   /* after that create the register mask
      for each of the instruction */
   createRegMask (ebbs, count);

@@ -18,12 +18,29 @@
 //
 // A stack allocator.
 
+// void thorup_C_p(p_t &p, const G_t &G, const std::map<unsigned int, std::set<unsigned int> > &S)
+// Constructs the partial map p used in Thorup's coloring heuristic algorithm C from the underlying graph G and the separators S.
+
 #ifndef SDCCSALLOC_HH
 #define SDCCSALLOC_HH 1
 
+extern "C"
+{
+#include "SDCCmem.h"
+#include "SDCCglobl.h"
+}
+
+#define SALLOC_CH (options.salloc == 1 || options.salloc == 2) // Chaitin
+#define SALLOC_CHA (options.salloc == 2) // Chaitin with alignment
+#define SALLOC_TD (options.salloc == 3 || options.salloc == 4 || options.salloc == 5)
+#define SALLOC_TDS (options.salloc == 3) // Simplified
+#define SALLOC_TDR (options.salloc == 5) // With greedy post-recoloring.
+
+#undef DEBUG_SALLOC
+
 #if defined(TD_SALLOC) || defined(CH_SALLOC)
 template<class G_t, class I_t, class SI_t>
-static void set_spilt(const assignment &a, G_t &G, const I_t &I, SI_t &scon)
+static void set_spilt(G_t &G, const I_t &I, SI_t &scon)
 {
   std::map<int, var_t> symbol_to_sindex;
   symbol *sym;
@@ -47,7 +64,7 @@ static void set_spilt(const assignment &a, G_t &G, const I_t &I, SI_t &scon)
     }
   j_mark = j;
   
-  // Add edges due to scope (see C99 standard, verse 1233, which requires things to have different addresses, not allowing us to allocate them to the same location, even if weotherwise could).
+  // Add edges due to scope (see C99 standard, verse 1233, which requires things to have different addresses, not allowing us to allocate them to the same location, even if we otherwise could).
   for(unsigned int i = 0; i < boost::num_vertices(scon); i++)
      for(unsigned int j = i + 1; j < boost::num_vertices(scon); j++)
         {
@@ -114,12 +131,89 @@ static void set_spilt(const assignment &a, G_t &G, const I_t &I, SI_t &scon)
         if(p == scon[i].sym->block || p == scon[j].sym->block)
           boost::add_edge(i, j, scon);
       }
+
+  // Ugly hack: Regparms.
+  for(sym = static_cast<symbol *>(setFirstItem(istack->syms)), j = boost::num_vertices(scon); sym; sym = static_cast<symbol *>(setNextItem(istack->syms)))
+    {
+      if(!sym->_isparm || !IS_REGPARM(sym->etype) || !sym->onStack || !sym->allocreq)
+        continue;
+      
+      boost::add_vertex(scon);
+      scon[j].sym = sym;
+      scon[j].color = -1;
+
+      // Extend liverange to cover everything.
+      for(unsigned int i = 0; i < boost::num_vertices(G); i++)
+        G[i].stack_alive.insert(j);
+
+      // Conflict with everything.
+      for(unsigned int i = 0; i < j; i++)
+        boost::add_edge(i, j, scon);
+
+      j++;
+    }
+}
+#endif
+
+#ifdef TD_SALLOC
+#include <boost/graph/max_cardinality_matching.hpp>
+#include <boost/graph/filtered_graph.hpp>
+
+template <class F_t>
+struct in_separator_edge {
+  in_separator_edge() { }
+  in_separator_edge(const std::set<unsigned int> &S, const F_t &F) : s(S) { f = &F; }
+  template <typename Edge>
+  bool operator()(const Edge& e) const {
+    return(s.count(boost::source(e, *f)) && s.count(boost::source(e, *f)));
+  }
+  
+  std::set<unsigned int> s;
+  const F_t *f;
+};
+
+struct in_separator_node {
+  in_separator_node() { }
+  in_separator_node(const std::set<unsigned int> &S) : s(S) { }
+  template <typename node>
+  bool operator()(const node& n) const {
+    return(s.count(n));
+  }
+  
+  std::set<unsigned int> s;
+};
+
+// Construct the partial map p used in Thorup's algorithm C from the underlying graph G and the separators S.
+template <class p_t, class G_t>
+void thorup_C_p(p_t &p, const G_t &G, const std::list<unsigned int> &ordering, const std::map<unsigned int, std::set<unsigned int> > &S)
+{
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> F_t;
+  F_t F(boost::num_vertices(G));
+  std::list<unsigned int>::const_iterator i, i_end;
+
+  for(i = ordering.begin(), i_end = ordering.end(); i != i_end; ++i)
+    {
+      in_separator_edge<F_t> edge_filter(S.find(*i)->second, F);
+      in_separator_node node_filter(S.find(*i)->second);
+      
+      boost::filtered_graph<F_t, in_separator_edge<F_t>, in_separator_node > f(F, edge_filter, node_filter);
+
+      std::vector<typename boost::graph_traits<G_t>::vertex_descriptor> M(boost::num_vertices(G));
+
+      boost::edmonds_maximum_cardinality_matching(f, &M[0]);
+
+      if(boost::matching_size(f, &M[0]) * 2 < S.find(*i)->second.size())
+        {
+          boost::add_edge(*i, *S.find(*i)->second.begin(), F);
+          p[*i] = *S.find(*i)->second.begin();
+        }
+    }
 }
 #endif
 
 #if defined(TD_SALLOC) || defined(CH_SALLOC)
 template <class SI_t>
-void color_stack_var(var_t v, SI_t &SI, int start, int *ssize)
+void color_stack_var(const var_t v, SI_t &SI, int start, int *ssize)
 {
   symbol *const sym = SI[v].sym;
   const int size = getSize(sym->type);
@@ -133,8 +227,10 @@ void color_stack_var(var_t v, SI_t &SI, int start, int *ssize)
     
   if(ssize)
     *ssize = (start + size > *ssize) ? start + size : *ssize;
-    
-  //std::cout << "Placing " << sym->name << " at [" << start << ", " << (start + size - 1) << "]\n";
+
+#if DEBUG_SALLOC    
+  std::cout << "Placing " << sym->name << " at [" << start << ", " << (start + size - 1) << "]\n";
+#endif
     
   // Mark stack location as used for all conflicting variables.
   typename boost::graph_traits<SI_t>::adjacency_iterator n, n_end;
@@ -144,7 +240,7 @@ void color_stack_var(var_t v, SI_t &SI, int start, int *ssize)
 
 // Place a single variable on the stack greedily.
 template <class SI_t>
-void color_stack_var_greedily(var_t v, SI_t &SI, int alignment, int *ssize)
+void color_stack_var_greedily(const var_t v, SI_t &SI, int alignment, int *ssize)
 {
   int start;
   symbol *const sym = SI[v].sym;
@@ -165,6 +261,35 @@ void color_stack_var_greedily(var_t v, SI_t &SI, int alignment, int *ssize)
     }
     
   color_stack_var(v, SI, start, ssize);
+}
+#endif
+
+#ifdef TD_SALLOC
+template <class SI_t>
+void color_stack_var_thorup(const var_t v, SI_t &SI, boost::icl::interval_set<int> &free_stack, int alignment, int *ssize)
+{
+  int start;
+  symbol *const sym = SI[v].sym;
+  const int size = getSize(sym->type);
+
+  // Find a suitable free stack location.
+  boost::icl::interval_set<int>::iterator si;
+  for(si = free_stack.begin();; ++si)
+    {
+       start = boost::icl::first(*si);
+       
+       // Adjust start address for alignment
+       if(start % alignment)
+         start = start + alignment - start % alignment;
+                    
+       if(boost::icl::last(*si) >= start + size - 1)
+         break; // Found one.
+    }
+
+
+  color_stack_var(v, SI, start, ssize);
+
+  free_stack -= boost::icl::discrete_interval<int>::type(start, start + size);
 }
 #endif
 
@@ -207,7 +332,7 @@ struct bpt_node
 typedef boost::adjacency_list<boost::setS, boost::vecS, boost::undirectedS, bpt_node> bpt_t;
 
 template <class G_t, class SI_t>
-void color_biclique(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, int size, int alignment, int *ssize)
+void color_biclique_thorup(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, boost::icl::interval_set<int> &free_stack, int size, int alignment, int *ssize)
 {
   std::map<unsigned int, unsigned int> i_to_i;
   unsigned int j;
@@ -239,7 +364,7 @@ void color_biclique(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, int
         
       if(i_to_i.find(v) != i_to_i.end())
         continue; // Already added to bipartite graph.
-    
+
       boost::add_vertex(b);
       b[j].v = v;
       i_to_i[v] = j++;
@@ -263,7 +388,7 @@ void color_biclique(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, int
       if(M[i] == boost::graph_traits<bpt_t>::null_vertex())
         {
           if(SI[v1].color < 0)
-            color_stack_var_greedily(v1, SI, alignment, ssize);
+            color_stack_var_thorup(v1, SI, free_stack, alignment, ssize);
           continue;
         }
         
@@ -274,10 +399,7 @@ void color_biclique(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, int
         continue;
         
       if(c1 < 0 && c2 < 0) // Both still uncolored.
-        {
-          color_stack_vars_greedily(v1, v2, SI, alignment, ssize);
-          continue;
-        }
+        std::cerr << "Pair of uncolored non-conflicting variables found while coloring biclique.\n";
         
       // Give the uncolored one the color of the colored one.
       var_t vc, vu;
@@ -285,33 +407,78 @@ void color_biclique(unsigned int i, unsigned int pi, const G_t &G, SI_t &SI, int
         vc = v1, vu = v2;
       else
         vu = v1, vc = v2;
+
       color_stack_var(vu, SI, SI[vc].color, ssize);
     }
 }
 #endif
 
 #ifdef TD_SALLOC
-// Coloring similar to Thorup's algorithm C, heavily modified to account for variables of different size and alignment.
+
 template <class p_t, class G_t, class SI_t>
 void thorup_C_color(const p_t &p, const G_t &G, SI_t &SI, const std::list<unsigned int> &ordering, const std::map<unsigned int, std::set<unsigned int> > &S, int size, int *ssize)
 {
+  //std::vector<boost::icl::interval_set<int> free_stack> free_stacks;
+
+  int base = *ssize;
+  boost::icl::interval_set<int> free_stack;
+
   std::list<unsigned int>::const_iterator i, i_end;
   for(i = ordering.begin(), i_end = ordering.end(); i != i_end; ++i)
     {
-      std::set<symbol *>::const_iterator s;
-      
+      // Calculate set of available stack locations.
+      free_stack.insert(boost::icl::discrete_interval<int>::type(base, 1 << 15));
+      std::set<unsigned int>::iterator j, j_end;
+      const std::set<unsigned int> &S_i = S.find(*i)->second;
+      for(j = S_i.begin(), j_end = S_i.end(); j != j_end; ++j)
+        for(std::set<var_t>::const_iterator s = G[*j].stack_alive.begin(); s != G[*j].stack_alive.end(); ++s)
+          if(SI[*s].color >= 0)
+            free_stack -= boost::icl::discrete_interval<int>::type(SI[*s].color, SI[*s].color + getSize(SI[*s].sym->type));
+
       //std::cout << "Coloring at " << *i << "\n";
-    
+
+      std::set<symbol *>::const_iterator s;
       typename p_t::const_iterator pi = p.find(*i);
       if(SALLOC_TDS || pi == p.end()) // Just color all uncolored variables at X_{v_i} greedily.
         {
-          std::set<var_t>::const_iterator s;    
-          for(s = G[*i].stack_alive.begin(); s != G[*i].stack_alive.end(); ++s)
+          std::set<var_t>::const_iterator s, s_end;
+          for(s = G[*i].stack_alive.begin(), s_end = G[*i].stack_alive.end(); s != s_end; ++s)
             if(getSize(SI[*s].sym->type) == size && SI[*s].color < 0)
-              color_stack_var_greedily(*s, SI, (size == 2 || size == 4) ? size : 1, ssize);
+              color_stack_var_thorup(*s, SI, free_stack, (size == 2 || size == 4) ? size : 1, ssize);
         }
       else // Optimally color the biclique X_{v_i} \cup X_{p(v_i)} and rename the colors greedily.
-        color_biclique(*i, pi->second, G, SI, size, (size == 2 || size == 4) ? size : 1, ssize);
+        color_biclique_thorup(*i, pi->second, G, SI, free_stack, size, (size == 2 || size == 4) ? size : 1, ssize);
+    }
+}
+
+template <class G_t, class SI_t>
+void tree_dec_recolor_greedily(const G_t &G, SI_t &SI, const std::list<unsigned int> &ordering, int *ssize)
+{
+  std::set<int> starts;
+
+  for(unsigned int i = 0; i < boost::num_vertices(G); i++)
+    {
+      std::set<var_t>::const_iterator s;
+      for(s = G[i].stack_alive.begin(); s != G[i].stack_alive.end(); ++s)
+        starts.insert(SI[*s].color);
+    }
+    
+  for(unsigned int i = 0; i < boost::num_vertices(SI); i++)
+      SI[i].free_stack.insert(boost::icl::discrete_interval<int>::type(0, 1 << 15));
+// Todo: Do this more efficiently by sorting vars first by live range (as per i below), then by starts (as above), and just recolor in that order.
+  for(std::set<int>::const_iterator start = starts.begin(); start != starts.end(); ++start)
+    {
+      std::list<unsigned int>::const_iterator i, i_end;
+      for(i = ordering.begin(), i_end = ordering.end(); i != i_end; ++i)
+        {
+          std::set<var_t>::const_iterator s, s_end;
+          for(s = G[*i].stack_alive.begin(), s_end = G[*i].stack_alive.end(); s != s_end; ++s)
+            if(SI[*s].color == *start)
+              {
+                int size = getSize(SI[*s].sym->type);
+                color_stack_var_greedily(*s, SI, (size == 2 || size == 4) ? size : 1, ssize);
+              }
+        }
     }
 }
 
@@ -321,7 +488,7 @@ void tree_dec_salloc(const G_t &G, SI_t &SI, const std::list<unsigned int> &orde
   std::map<unsigned int, unsigned int> p;
   std::set<int> sizes;
   
-  thorup_C_p(p, G, S);
+  thorup_C_p(p, G, ordering, S);
 
   for(unsigned int i = 0; i < boost::num_vertices(G); i++)
     {
@@ -338,7 +505,13 @@ void tree_dec_salloc(const G_t &G, SI_t &SI, const std::list<unsigned int> &orde
     
   for(std::set<int>::const_reverse_iterator s = sizes.rbegin(); s != sizes.rend(); ++s)
     thorup_C_color(p, G, SI, ordering, S, *s, &ssize);
-    
+  
+  if(SALLOC_TDR)
+    {
+      ssize = 0;
+      tree_dec_recolor_greedily(G, SI, ordering, &ssize);
+    }
+
   if(currFunc)
     {
       currFunc->stack += ssize;
@@ -414,12 +587,16 @@ void chaitin_salloc(SI_t &SI)
 
 #if defined(TD_SALLOC) || defined (CH_SALLOC)
 // Dump stack conflict graph, with numbered and named nodes.
+static
 void dump_scon(const scon_t &scon)
 {
+  if(!currFunc)
+    return;
+
   std::ofstream dump_file((std::string(dstFileName) + ".dumpscon" + currFunc->rname + ".dot").c_str());
 
   std::string *name = new std::string[boost::num_vertices(scon)];
-  for (var_t i = 0; static_cast<boost::graph_traits<scon_t>::vertices_size_type>(i) < boost::num_vertices(scon); i++)
+  for(var_t i = 0; static_cast<boost::graph_traits<scon_t>::vertices_size_type>(i) < boost::num_vertices(scon); i++)
     {
       std::ostringstream os;
       os << i;

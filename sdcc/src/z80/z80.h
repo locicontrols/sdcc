@@ -23,9 +23,7 @@ typedef struct
     int port_mode;
     int port_back;
     int reserveIY;
-    int dump_graphs;
     int oldralloc;
-    int salloc;
   }
 Z80_OPTS;
 
@@ -38,16 +36,11 @@ extern Z80_OPTS z80_opts;
 
 #define IY_RESERVED (z80_opts.reserveIY)
 
-#define OPTRALLOC_REMAT (IS_Z80 || IS_Z180 || IS_R2K) /* Enable rematerialization in the new allocator for the ports with exact cost function */
 #define OPTRALLOC_EXACT_COST (!IS_GB) // Todo: Implement exact cost for gbz80.
+#define OPTRALLOC_REMAT OPTRALLOC_EXACT_COST /* Enable rematerialization in the new allocator for the ports with exact cost function */
 #define OPTRALLOC_HL (!IS_GB)
 #define OPTRALLOC_A 1
 #define OPTRALLOC_IY !IY_RESERVED
-
-#define SALLOC_CH (z80_opts.salloc == 1 || z80_opts.salloc == 2) // Chaitin
-#define SALLOC_CHA (z80_opts.salloc == 2) // Chaitin with alignment
-#define SALLOC_TD (z80_opts.salloc == 3 || z80_opts.salloc == 4)
-#define SALLOC_TDS (z80_opts.salloc == 3) // Simplified
 
 enum
   {

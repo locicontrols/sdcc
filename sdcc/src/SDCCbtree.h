@@ -16,8 +16,11 @@
 // along with this program; if not, write to the Free Software
 // Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+#ifndef SDCCBTREE_H
+#define SDCCBTREE_H
+
 // Init block tree. To be called for each new function.
-void btree_init(void);
+void btree_init();
 
 // Add child as a sub-block of parent.
 void btree_add_child(short parent, short child);
@@ -32,5 +35,7 @@ void btree_add_symbol(struct symbol *s);
 void btree_alloc(void);
 
 // Get stack size for a given block. To be called after btree_alloc() only.
-int btree_get_stack_size(short block);
+//int btree_get_stack_size(short block);
+
+#endif
 
