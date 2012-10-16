@@ -39,6 +39,7 @@
 #define OPTION_NO_STD_CRT0     "--no-std-crt0"
 #define OPTION_RESERVE_IY      "--reserve-regs-iy"
 #define OPTION_OLDRALLOC       "--oldralloc"
+#define OPTION_FRAMEPOINTER    "--fno-omit-frame-pointer"
 
 static char _z80_defaultRules[] = {
 #include "peeph.rul"
@@ -66,6 +67,7 @@ static OPTION _z80_options[] = {
   {0, OPTION_NO_STD_CRT0,     &options.no_std_crt0, "For the z80/gbz80 do not link default crt0.rel"},
   {0, OPTION_RESERVE_IY,      &z80_opts.reserveIY, "Do not use IY (incompatible with --fomit-frame-pointer)"},
   {0, OPTION_OLDRALLOC,       &options.oldralloc, "Use old register allocator"},
+  {0, OPTION_FRAMEPOINTER,    &z80_opts.noOmitFramePtr, "Do not omit frame pointer"},
   {0, NULL}
 };
 
@@ -115,7 +117,10 @@ extern PORT r2k_port;
 #include "mappings.i"
 
 static builtins _z80_builtins[] = {
-  {"__builtin_memcpy", "vg*", 3, {"vg*", "vg*", "ui"}},
+  {"__builtin_memcpy", "vg*", 3, {"vg*", "Cvg*", "ui"}},
+  {"__builtin_strcpy", "cg*", 2, {"cg*", "Ccg*"}},
+  {"__builtin_strncpy", "cg*", 3, {"cg*", "Ccg*", "ui"}},
+  {"__builtin_strchr", "cg*", 2, {"Ccg*", "i"}},
   {"__builtin_memset", "vg*", 3, {"vg*", "i", "ui"}},
   {NULL, NULL, 0, {NULL}}
 };
@@ -371,11 +376,11 @@ _process_pragma (const char *s)
 }
 
 static const char *_gbz80_rgbasmCmd[] = {
-  "rgbasm", "-o\"$1.rel\"", "\"$1.asm\"", NULL
+  "rgbasm", "-o$1.rel", "$1.asm", NULL
 };
 
 static const char *_gbz80_rgblinkCmd[] = {
-  "xlink", "-tg", "-n\"$1.sym\"", "-m\"$1.map\"", "-zFF", "\"$1.lnk\"", NULL
+  "xlink", "-tg", "-n$1.sym", "-m$1.map", "-zFF", "$1.lnk", NULL
 };
 
 static void
@@ -599,7 +604,7 @@ _setValues (void)
 
   /* For the old register allocator (with the new one we decide to omit the frame pointer for each function individually) */
   if (!IS_GB && options.omitFramePtr)
-    z80_port.stack.call_overhead = 2;
+    port->stack.call_overhead = 2;
 }
 
 static void
@@ -609,6 +614,9 @@ _finaliseOptions (void)
   port->mem.default_globl_map = data;
   if (_G.asmType == ASM_TYPE_ASXXXX && IS_GB)
     asm_addTree (&_asxxxx_gb);
+
+  if (IY_RESERVED)
+    port->num_regs -= 2;
 
   _setValues ();
 }
@@ -749,24 +757,24 @@ oclsExpense (struct memmap *oclass)
 */
 
 static const char *_z80LinkCmd[] = {
-  "sdldz80", "-nf", "\"$1\"", NULL
+  "sdldz80", "-nf", "$1", NULL
 };
 
 static const char *_gbLinkCmd[] = {
-  "sdldgb", "-nf", "\"$1\"", NULL
+  "sdldgb", "-nf", "$1", NULL
 };
 
 /* $3 is replaced by assembler.debug_opts resp. port->assembler.plain_opts */
 static const char *_z80AsmCmd[] = {
-  "sdasz80", "$l", "$3", "\"$2\"", "\"$1.asm\"", NULL
+  "sdasz80", "$l", "$3", "$2", "$1.asm", NULL
 };
 
 static const char *_gbAsmCmd[] = {
-  "sdasgb", "$l", "$3", "\"$2\"", "\"$1.asm\"", NULL
+  "sdasgb", "$l", "$3", "$2", "$1.asm", NULL
 };
 
 static const char *_r2kAsmCmd[] = {
-  "sdasrab", "$l", "$3", "\"$2\"", "\"$1.asm\"", NULL
+  "sdasrab", "$l", "$3", "$2", "$1.asm", NULL
 };
 
 static const char *const _crt[] = { "crt0.rel", NULL, };
@@ -792,7 +800,7 @@ PORT z80_port = {
   {                             /* Assembler */
    _z80AsmCmd,
    NULL,
-   "-plosgffwc",                /* Options with debug */
+   "-plosgffwy",                /* Options with debug */
    "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
@@ -830,7 +838,7 @@ PORT z80_port = {
    NULL,                        /* xdata */
    NULL,                        /* bit */
    "RSEG (ABS)",
-   "GSINIT",
+   "GSINIT",                    /* static initialization */
    NULL,                        /* overlay */
    "GSFINAL",
    "HOME",
@@ -840,6 +848,8 @@ PORT z80_port = {
    "CABS (ABS)",                /* cabs_name */
    "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
+   "INITIALIZED",               /* name of segment for initialized variables */
+   "INITIALIZER",               /* name of segment for copies of initialized variables in code space */
    NULL,
    NULL,
    1                            /* CODE  is read-only */
@@ -849,7 +859,7 @@ PORT z80_port = {
    -1, 0, 0, 4, 0, 2},
   /* Z80 has no native mul/div commands */
   {
-   0, 2},
+   0, -1},
   {
    z80_emitDebuggerSymbol},
   {
@@ -897,7 +907,8 @@ PORT z80_port = {
   _z80_builtins,                /* builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  9,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 
@@ -916,7 +927,7 @@ PORT z180_port = {
   {                             /* Assembler */
    _z80AsmCmd,
    NULL,
-   "-plosgffwc",                /* Options with debug */
+   "-plosgffwy",                /* Options with debug */
    "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
@@ -964,6 +975,8 @@ PORT z180_port = {
    "CABS (ABS)",                /* cabs_name */
    "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
+   "INITIALIZED",               /* name of segment for initialized variables */
+   "INITIALIZER",               /* name of segment for copies of initialized variables in code space */
    NULL,
    NULL,
    1                            /* CODE  is read-only */
@@ -973,7 +986,7 @@ PORT z180_port = {
    -1, 0, 0, 4, 0, 2},
   /* Z80 has no native mul/div commands */
   {
-   0, 2},
+   0, -1},
   {
    z80_emitDebuggerSymbol},
   {
@@ -1021,7 +1034,8 @@ PORT z180_port = {
   _z80_builtins,                /* builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  9,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 
@@ -1040,7 +1054,7 @@ PORT r2k_port = {
   {                             /* Assembler */
    _r2kAsmCmd,
    NULL,
-   "-plosgffwc",                /* Options with debug */
+   "-plosgffwy",                /* Options with debug */
    "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
@@ -1088,6 +1102,8 @@ PORT r2k_port = {
    "CABS (ABS)",                /* cabs_name */
    "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
+   "INITIALIZED",               /* name of segment for initialized variables */
+   "INITIALIZER",               /* name of segment for copies of initialized variables in code space */
    NULL,
    NULL,
    1                            /* CODE  is read-only */
@@ -1097,7 +1113,7 @@ PORT r2k_port = {
    -1, 0, 0, 4, 0, 2},
   /* Z80 has no native mul/div commands */
   {
-   0, 2},
+   0, -1},
   {
    z80_emitDebuggerSymbol},
   {
@@ -1145,12 +1161,13 @@ PORT r2k_port = {
   _z80_builtins,                /* builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  9,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 
 PORT r3ka_port = {
-  TARGET_ID_R2K,
+  TARGET_ID_R3KA,
   "r3ka",
   "Rabbit 3000A",               /* Target name */
   NULL,                         /* Processor name */
@@ -1164,7 +1181,7 @@ PORT r3ka_port = {
   {                             /* Assembler */
    _r2kAsmCmd,
    NULL,
-   "-plosgffwc",                /* Options with debug */
+   "-plosgffwy",                /* Options with debug */
    "-plosgffw",                 /* Options without debug */
    0,
    ".asm"},
@@ -1212,6 +1229,8 @@ PORT r3ka_port = {
    "CABS (ABS)",                /* cabs_name */
    "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
+   "INITIALIZED",               /* name of segment for initialized variables */
+   "INITIALIZER",               /* name of segment for copies of initialized variables in code space */
    NULL,
    NULL,
    1                            /* CODE  is read-only */
@@ -1221,7 +1240,7 @@ PORT r3ka_port = {
    -1, 0, 0, 4, 0, 2},
   /* Z80 has no native mul/div commands */
   {
-   0, 2},
+   0, -1},
   {
    z80_emitDebuggerSymbol},
   {
@@ -1269,7 +1288,8 @@ PORT r3ka_port = {
   _z80_builtins,                /* builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  9,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 
@@ -1289,7 +1309,7 @@ PORT gbz80_port = {
   {                             /* Assembler */
    _gbAsmCmd,
    NULL,
-   "-plosgffwc",                /* Options with debug */
+   "-plosgffwy",                /* Options with debug */
    "-plosgffw",                 /* Options without debug */
    0,
    ".asm",
@@ -1338,6 +1358,8 @@ PORT gbz80_port = {
    "CABS (ABS)",                /* cabs_name */
    "DABS (ABS)",                /* xabs_name */
    NULL,                        /* iabs_name */
+   NULL,                        /* name of segment for initialized variables */
+   NULL,                        /* name of segment for copies of initialized variables in code space */
    NULL,
    NULL,
    1                            /* CODE is read-only */
@@ -1347,7 +1369,7 @@ PORT gbz80_port = {
    -1, 0, 0, 2, 0, 4},
   /* gbZ80 has no native mul/div commands */
   {
-   0, 2},
+   0, -1},
   {
    z80_emitDebuggerSymbol},
   {
@@ -1395,7 +1417,8 @@ PORT gbz80_port = {
   NULL,                         /* no builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  5,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 

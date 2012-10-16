@@ -59,9 +59,7 @@
 typedef short int var_t;
 typedef signed char reg_t;
 
-// Todo: Move this port-dependency somewehere else?
-#define NUM_REGS ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) ? 9 : (TARGET_IS_GBZ80 ? 5 : ((TARGET_IS_HC08 || TARGET_IS_S08) ? 3 : 0)))
-// Upper bound on NUM_REGS
+// Integer constant upper bound on port->num_regs
 #define MAX_NUM_REGS 9
 
 // Assignment at an instruction
@@ -79,7 +77,7 @@ struct i_assignment_t
 #if 0
   bool operator<(const i_assignment_t &i_a) const
   {
-    for (reg_t r = 0; r < NUM_REGS; r++)
+    for (reg_t r = 0; r < port->num_regs; r++)
       for (unsigned int i = 0; i < 2; i++)
         {
           if (registers[r][i] < i_a.registers[r][i])
@@ -104,7 +102,7 @@ struct i_assignment_t
 
   void remove_var(var_t v)
   {
-    for (reg_t r = 0; r < NUM_REGS; r++)
+    for (reg_t r = 0; r < port->num_regs; r++)
       {
         if (registers[r][1] == v)
           {
@@ -237,8 +235,8 @@ static void add_operand_conflicts_in_node(const cfg_node &n, I_t &I);
 template <class T_t>
 static void get_best_local_assignment_biased(assignment &a, typename boost::graph_traits<T_t>::vertex_descriptor t, const T_t &T);
 
-// Code for anotehr ic is generated when generating this one. Mark the other as generated. Port-specific.
-static void extra_ic_generated(const iCode *ic);
+// Code for another ic is generated when generating this one. Mark the other as generated. Port-specific.
+static void extra_ic_generated(iCode *ic);
 
 inline void
 add_operand_to_cfg_node(cfg_node &n, operand *o, std::map<std::pair<int, reg_t>, var_t> &sym_to_index)
@@ -386,6 +384,8 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
           add_operand_to_cfg_node(cfg[key_to_index[ic->key]], IC_RIGHT(ic), sym_to_index);
         }
 
+      // TODO: Extend live-ranges of returns of built-in function calls back to first SEND.
+
       add_operand_conflicts_in_node(cfg[key_to_index[ic->key]], con);
     }
 
@@ -413,7 +413,7 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
   for (var_t i = boost::num_vertices(con) - 1; i >= 0; i--)
     {
       cfg_sym_t cfg2;
-      boost::copy_graph(cfg, cfg2);
+      boost::copy_graph(cfg, cfg2, boost::vertex_copy(forget_properties()).edge_copy(forget_properties()));
       for (int j = boost::num_vertices(cfg) - 1; j >= 0; j--)
         {
           if (cfg[j].alive.find(i) == cfg[j].alive.end())
@@ -430,7 +430,7 @@ create_cfg(cfg_t &cfg, con_t &con, ebbIndex *ebbi)
 #endif
           // Non-connected CFGs shouldn't exist either. Another problem with dead code eliminarion.
           cfg_sym_t cfg2;
-          boost::copy_graph(cfg, cfg2);
+          boost::copy_graph(cfg, cfg2, boost::vertex_copy(forget_properties()).edge_copy(forget_properties()));
           std::vector<boost::graph_traits<cfg_t>::vertices_size_type> component(num_vertices(cfg2));
           boost::connected_components(cfg2, &component[0]);
 
@@ -507,7 +507,7 @@ inline void alive_tree_dec(tree_dec_t &tree_dec, const cfg_t &cfg)
 }
 
 #if defined(DEBUG_RALLOC_DEC) || defined (DEBUG_RALLOC_DEC_ASS)
-void print_assignment(const assignment &a)
+static void print_assignment(const assignment &a)
 {
   varset_t::const_iterator i;
   std::cout << "[";
@@ -567,7 +567,7 @@ static void assignments_introduce_variable(assignment_list_t &alist, unsigned sh
     {
       a_initialized = false;
 
-      for (reg_t r = 0; r < NUM_REGS; r++)
+      for (reg_t r = 0; r < port->num_regs; r++)
         {
           if (!assignment_conflict(*ai, I, v, r))
             {
@@ -638,13 +638,13 @@ static void drop_worst_assignments(assignment_list_t &alist, unsigned short int 
   size_t alist_size;
   assignment_list_t::iterator ai, an;
 
-  if ((alist_size = alist.size()) * NUM_REGS <= static_cast<size_t>(options.max_allocs_per_node) || alist_size <= 1)
+  if ((alist_size = alist.size()) * port->num_regs <= static_cast<size_t>(options.max_allocs_per_node) || alist_size <= 1)
     return;
 
   *assignment_optimal = false;
 
 #ifdef DEBUG_RALLOC_DEC
-  std::cout << "Too many assignments here (" << i << "):" << alist_size << " > " << options.max_allocs_per_node / NUM_REGS << ". Dropping some.\n"; std::cout.flush();
+  std::cout << "Too many assignments here (" << i << "):" << alist_size << " > " << options.max_allocs_per_node / port->num_regs << ". Dropping some.\n"; std::cout.flush();
 #endif
 
   assignment_rep *arep = new assignment_rep[alist_size];
@@ -655,11 +655,11 @@ static void drop_worst_assignments(assignment_list_t &alist, unsigned short int 
       arep[n].s = ai->s + rough_cost_estimate(*ai, i, G, I) + compability_cost(*ai, ac, I);
     }
 
-  std::nth_element(arep + 1, arep + options.max_allocs_per_node / NUM_REGS, arep + alist_size);
+  std::nth_element(arep + 1, arep + options.max_allocs_per_node / port->num_regs, arep + alist_size);
 
-  //std::cout << "nth elem. est. cost: " << arep[options.max_allocs_per_node / NUM_REGS].s << "\n"; std::cout.flush();
+  //std::cout << "nth elem. est. cost: " << arep[options.max_allocs_per_node / port->num_regs].s << "\n"; std::cout.flush();
 
-  for (n = options.max_allocs_per_node / NUM_REGS + 1; n < alist_size; n++)
+  for (n = options.max_allocs_per_node / port->num_regs + 1; n < alist_size; n++)
     alist.erase(arep[n].i);
     
   delete[] arep;
@@ -740,6 +740,8 @@ static void tree_dec_ralloc_introduce(T_t &T, typename boost::graph_traits<T_t>:
 #ifdef DEBUG_RALLOC_DEC_ASS
   for(ai = alist.begin(); ai != alist.end(); ++ai)
   	print_assignment(*ai);
+  std::cout << "\n";
+
   assignment best;
   get_best_local_assignment(best, t, T);
   std::cout << "Best: "; print_assignment(best); std::cout << "\n";

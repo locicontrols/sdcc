@@ -418,26 +418,38 @@ pic16_initPointer (initList * ilist, sym_link *toType)
   /* pointers can be initialized with address of
      a variable or address of an array element */
   if (IS_AST_OP (expr) && expr->opval.op == '&') {
+
+    /* AST nodes for symbols of type struct or union may be missing type */
+    /* due to the abuse of the sym->implicit flag, so get the type */
+    /* directly from the symbol if it's missing in the node. */
+    sym_link *etype = expr->left->etype;
+    sym_link *ftype = expr->left->ftype;
+    if (!etype && IS_AST_SYM_VALUE(expr->left))
+      {
+        etype = expr->left->opval.val->sym->etype;
+        ftype = expr->left->opval.val->sym->type;
+      }
+
     /* address of symbol */
-    if (IS_AST_SYM_VALUE (expr->left) && expr->left->etype) {
+    if (IS_AST_SYM_VALUE (expr->left) && etype) {
       val = AST_VALUE (expr->left);
       val->type = newLink (DECLARATOR);
-      if(SPEC_SCLS (expr->left->etype) == S_CODE) {
+      if(SPEC_SCLS (etype) == S_CODE) {
         DCL_TYPE (val->type) = CPOINTER;
         CodePtrPointsToConst (val->type);
       }
-      else if (SPEC_SCLS (expr->left->etype) == S_XDATA)
+      else if (SPEC_SCLS (etype) == S_XDATA)
         DCL_TYPE (val->type) = FPOINTER;
-      else if (SPEC_SCLS (expr->left->etype) == S_XSTACK)
+      else if (SPEC_SCLS (etype) == S_XSTACK)
         DCL_TYPE (val->type) = PPOINTER;
-      else if (SPEC_SCLS (expr->left->etype) == S_IDATA)
+      else if (SPEC_SCLS (etype) == S_IDATA)
         DCL_TYPE (val->type) = IPOINTER;
-      else if (SPEC_SCLS (expr->left->etype) == S_EEPROM)
+      else if (SPEC_SCLS (etype) == S_EEPROM)
         DCL_TYPE (val->type) = EEPPOINTER;
       else
         DCL_TYPE (val->type) = POINTER;
 
-      val->type->next = expr->left->ftype;
+      val->type->next = ftype;
       val->etype = getSpec (val->type);
       return val;
     }
@@ -613,7 +625,7 @@ pic16_printIvalType (symbol *sym, sym_link * type, initList * ilist, char ptype,
     val = valCastLiteral(type, floatFromVal(val));
   }
 
-  for (i = 0; i < getSize (type); i++) {
+  for (i = 0; i < (int)getSize (type); i++) {
     pic16_emitDB(pic16aopLiteral(val, i), ptype, p);
   } // for
 }
@@ -625,7 +637,8 @@ static int
 pic16_printIvalChar (symbol *sym, sym_link * type, initList * ilist, const char *s, char ptype, void *p)
 {
   value *val;
-  int remain, len, ilen;
+  int len;
+  size_t remain, ilen;
 
   if(!p)
     return 0;
@@ -781,7 +794,7 @@ pic16_printIvalBitFields (symbol **sym, initList **ilist, char ptype, void *p)
   unsigned long ival = 0;
   int size = 0;
   int bit_start = 0;
-  unsigned long i;
+  int i;
 
 
 #if DEBUG_PRINTIVAL
@@ -886,7 +899,7 @@ pic16_printIvalUnion (symbol * sym, sym_link * type,
 {
   //symbol *sflds;
   initList *iloop = NULL;
-  int size;
+  unsigned int size;
   symbol *sflds = NULL;
 
 #if DEBUG_PRINTIVAL
@@ -1432,26 +1445,44 @@ CODESPACE: %d\tCONST: %d\tPTRCONST: %d\tSPEC_CONST: %d\n", __FUNCTION__, map->sn
 /*-----------------------------------------------------------------*/
 /* pic16_emitConfigRegs - emits the configuration registers              */
 /*-----------------------------------------------------------------*/
-void pic16_emitConfigRegs(FILE *of)
+void pic16_emitConfigRegs (FILE *of)
 {
   int i;
 
-        for(i=0;i<=(pic16->cwInfo.confAddrEnd-pic16->cwInfo.confAddrStart);i++)
-                if(pic16->cwInfo.crInfo[i].emit)        //mask != -1)
-                        fprintf (of, "\t__config 0x%06x, 0x%02x\n",
-                                pic16->cwInfo.confAddrStart+i,
-                                (unsigned char) pic16->cwInfo.crInfo[i].value);
+  if (pic16_config_options)
+    {
+      pic16_config_options_t *p;
+
+      /* check if mixing config directives */
+      for (i = 0; i <= (pic16->cwInfo.confAddrEnd - pic16->cwInfo.confAddrStart); ++i)
+        if (pic16->cwInfo.crInfo[i].emit)
+          {
+            werror (E_MIXING_CONFIG);
+            break;
+          }
+
+      /* emit new config directives */
+      for (p = pic16_config_options; p; p = p->next)
+        fprintf (of, "\t%s\n", p->config_str);
+    }
+
+  /* emit old __config directives */
+  for (i = 0; i <= (pic16->cwInfo.confAddrEnd - pic16->cwInfo.confAddrStart); ++i)
+    if (pic16->cwInfo.crInfo[i].emit)        //mask != -1)
+      fprintf (of, "\t__config 0x%06x, 0x%02x\n",
+      pic16->cwInfo.confAddrStart + i,
+      (unsigned char) pic16->cwInfo.crInfo[i].value);
 }
 
-void pic16_emitIDRegs(FILE *of)
+void pic16_emitIDRegs (FILE *of)
 {
   int i;
 
-        for(i=0;i<=(pic16->idInfo.idAddrEnd-pic16->idInfo.idAddrStart);i++)
-                if(pic16->idInfo.irInfo[i].emit)
-                        fprintf (of, "\t__idlocs 0x%06x, 0x%02x\n",
-                                pic16->idInfo.idAddrStart+i,
-                                (unsigned char) pic16->idInfo.irInfo[i].value);
+  for (i=0; i <= (pic16->idInfo.idAddrEnd - pic16->idInfo.idAddrStart); i++)
+    if (pic16->idInfo.irInfo[i].emit)
+      fprintf (of, "\t__idlocs 0x%06x, 0x%02x\n",
+      pic16->idInfo.idAddrStart + i,
+      (unsigned char) pic16->idInfo.irInfo[i].value);
 }
 
 

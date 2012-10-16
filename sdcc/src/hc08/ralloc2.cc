@@ -107,8 +107,15 @@ static bool operand_sane(const operand *o, const assignment &a, unsigned short i
   if(oi == oi_end)
     return(true);
 
+  // Go to the second byte. If the operand is only a single byte, it cannot be
+  // an unsupported register combination or split between register and memory.
+  oi2 = oi;
+  oi2++;
+  if (oi2 == oi_end)
+    return(true);
+  
   // Register combinations code generation cannot handle yet (AH, XH, HA).
-  if(a.local.find(oi->second) != a.local.end() && a.local.find((oi2 = oi, ++oi2)->second) != a.local.end())
+  if(a.local.find(oi->second) != a.local.end() && a.local.find(oi2->second) != a.local.end())
     {
       const reg_t l = a.global[oi->second];
       const reg_t h = a.global[oi2->second];
@@ -344,11 +351,11 @@ static void set_surviving_regs(const assignment &a, unsigned short int i, const 
 {
   iCode *ic = G[i].ic;
   
-  ic->rSurv = newBitVect(NUM_REGS);
+  ic->rSurv = newBitVect(port->num_regs);
   
   std::set<var_t>::const_iterator v, v_end;
   for (v = G[i].alive.begin(), v_end = G[i].alive.end(); v != v_end; ++v)
-    if(G[i].dying.find(*v) == G[i].dying.end())
+    if(a.global[*v] >= 0 && G[i].dying.find(*v) == G[i].dying.end())
       if(!((IC_RESULT(ic) && !POINTER_SET(ic)) && IS_SYMOP(IC_RESULT(ic)) && OP_SYMBOL_CONST(IC_RESULT(ic))->key == I[*v].v))
         ic->rSurv = bitVectSetBit(ic->rSurv, a.global[*v]);
 }
@@ -529,7 +536,7 @@ static float rough_cost_estimate(const assignment &a, unsigned short int i, cons
 }
 
 // Code for another ic is generated when generating this one. Mark the other as generated.
-static void extra_ic_generated(const iCode *ic)
+static void extra_ic_generated(iCode *ic)
 {
   if(ic->op == '>' || ic->op == '<' || ic->op == LE_OP || ic->op == GE_OP || ic->op == EQ_OP || ic->op == NE_OP || ic->op == '^' || ic->op == '|' || ic->op == BITWISEAND)
     {

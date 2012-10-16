@@ -22,7 +22,7 @@
  * Kent, Ohio  44240
  *
  *   This Assember Ported by
- *      John L. Hartman	(JLH)
+ *      John L. Hartman (JLH)
  *      jhartman at compuserve dot com
  *      noice at noicedebugger dot com
  *
@@ -35,11 +35,11 @@
                 I8051.H
         }
         $(FILES) = {
-                I51EXT.C
                 I51MCH.C
                 I51ADR.C
                 I51PST.C
                 ASMAIN.C
+                ASDBG.C
                 ASLEX.C
                 ASSYM.C
                 ASSUBR.C

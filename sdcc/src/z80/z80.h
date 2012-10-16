@@ -24,6 +24,7 @@ typedef struct
     int port_mode;
     int port_back;
     int reserveIY;
+    int noOmitFramePtr;
   }
 Z80_OPTS;
 
@@ -38,8 +39,6 @@ extern Z80_OPTS z80_opts;
 
 #define IY_RESERVED (z80_opts.reserveIY)
 
-#define OPTRALLOC_EXACT_COST 1
-#define OPTRALLOC_REMAT (OPTRALLOC_EXACT_COST && !IS_GB)
 #define OPTRALLOC_HL (!IS_GB)
 #define OPTRALLOC_IY !(IY_RESERVED || IS_GB)
 

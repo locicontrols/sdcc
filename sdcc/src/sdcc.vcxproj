@@ -255,6 +255,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="SDCClospre.cc" />
     <ClCompile Include="SDCClrange.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -437,24 +438,17 @@
   <ItemGroup>
     <CustomBuild Include="SDCC.lex">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">flex -8 -f -oSDCClex.c SDCC.lex</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SDCCy.h;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SDCClex.c;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SDCClex.c</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">flex -8 -f -oSDCClex.c SDCC.lex</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SDCCy.h;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SDCClex.c;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating Lexer: SDCClex.c</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating Lexer: SDCClex.c</Message>
     </CustomBuild>
     <None Include="..\support\scripts\sdcc.ico" />
-    <CustomBuild Include="SDCC.y">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bison -d -v -o SDCCy.c SDCC.y</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bison -d -v -o SDCCy.c SDCC.y</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SDCCy.c;SDCCy.h</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SDCCy.c;SDCCy.h</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating Parser: SDCCy.c</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating Parser: SDCCy.c</Message>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
@@ -481,6 +475,7 @@
     <ClInclude Include="SDCCicode.h" />
     <ClInclude Include="SDCClabel.h" />
     <ClInclude Include="SDCCloop.h" />
+    <ClInclude Include="SDCClospre.hpp" />
     <ClInclude Include="SDCClrange.h" />
     <ClInclude Include="SDCCmacro.h" />
     <ClInclude Include="SDCCmem.h" />
@@ -497,6 +492,7 @@
     <ClInclude Include="SDCCval.h" />
     <ClInclude Include="sdccy.h" />
     <ClInclude Include="spawn.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\config.vcxproj">

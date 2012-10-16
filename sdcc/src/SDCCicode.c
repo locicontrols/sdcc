@@ -285,6 +285,11 @@ PRINTFUNC (picGetValueAtAddr)
   dbuf_append_str (dbuf, " = ");
   dbuf_append_str (dbuf, "@[");
   dbuf_printOperand (IC_LEFT (ic), dbuf);
+  if (IC_RIGHT (ic))
+    {
+      dbuf_append_str (dbuf, " + ");
+      dbuf_printOperand (IC_RIGHT (ic), dbuf);
+    }
   dbuf_append_str (dbuf, "]\n");
 }
 
@@ -864,7 +869,7 @@ isParameterToCall (value * args, operand * op)
 /* isOperandGlobal   - return 1 if operand is a global variable    */
 /*-----------------------------------------------------------------*/
 int
-isOperandGlobal (operand * op)
+isOperandGlobal (const operand *op)
 {
   if (!op)
     return 0;
@@ -883,8 +888,11 @@ isOperandGlobal (operand * op)
 /* isOperandVolatile - return 1 if the operand is volatile         */
 /*-----------------------------------------------------------------*/
 int
-isOperandVolatile (operand * op, bool chkTemp)
+isOperandVolatile (const operand *op, bool chkTemp)
 {
+  if (!op)
+    return 0;
+
   if (IS_ITEMP (op) && !chkTemp)
     return 0;
 
@@ -992,6 +1000,34 @@ isOperandInDirSpace (operand * op)
       etype = getSpec (operandType (op));
     }
   return (IN_DIRSPACE (SPEC_OCLS (etype)) ? TRUE : FALSE);
+}
+
+/*-----------------------------------------------------------------*/
+/* isOperandInBitSpace - will return true if operand is in bitSpace */
+/*-----------------------------------------------------------------*/
+bool
+isOperandInBitSpace (operand * op)
+{
+  sym_link *etype;
+
+  if (!op)
+    return FALSE;
+
+  if (!IS_SYMOP (op))
+    return FALSE;
+
+  if (!IS_TRUE_SYMOP (op))
+    {
+      if (SPIL_LOC (op))
+        etype = SPIL_LOC (op)->etype;
+      else
+        return FALSE;
+    }
+  else
+    {
+      etype = getSpec (operandType (op));
+    }
+  return (IN_BITSPACE (SPEC_OCLS (etype)) ? TRUE : FALSE);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1261,12 +1297,14 @@ operandOperation (operand * left, operand * right, int op, sym_link * type)
          sense here. Shifting by a negative number is impossible. */
       if (IS_UNSIGNED (let))
         /* unsigned: logic shift right */
-        retval = operandFromLit ((TYPE_TARGET_ULONG) double2ul (operandLitValue (left)) >>
-                                 (TYPE_TARGET_ULONG) double2ul (operandLitValue (right)));
+        retval = operandFromValue (valCastLiteral (type,
+                                                   ((TYPE_TARGET_ULONG) double2ul (operandLitValue (left)) >>
+                                                    (TYPE_TARGET_ULONG) double2ul (operandLitValue (right)))));
       else
         /* signed: arithmetic shift right */
-        retval = operandFromLit ((TYPE_TARGET_LONG) operandLitValue (left) >>
-                                 (TYPE_TARGET_ULONG) double2ul (operandLitValue (right)));
+        retval = operandFromValue (valCastLiteral (type,
+                                                   ((TYPE_TARGET_LONG) operandLitValue (left) >>
+                                                    (TYPE_TARGET_ULONG) double2ul (operandLitValue (right)))));
       break;
     case EQ_OP:
       if (IS_FLOAT (let) || IS_FLOAT (ret))
@@ -1651,7 +1689,7 @@ operandFromSymbol (symbol * sym)
 /* operandFromValue - creates an operand from value                */
 /*-----------------------------------------------------------------*/
 operand *
-operandFromValue (value * val)
+operandFromValue (value *val)
 {
   operand *op;
 
@@ -2029,8 +2067,9 @@ geniCodeMultiply (operand * left, operand * right, RESULT_TYPE resultType)
   /* code generated for 1 byte * 1 byte literal = 2 bytes result is more
      efficient in most cases than 2 bytes result = 2 bytes << literal
      if port has 1 byte muldiv */
-  if ((p2 > 0) && !IS_FLOAT (letype) && !IS_FIXED (letype) && !((resultType == RESULT_TYPE_INT) && (getSize (resType) != getSize (ltype)) && (port->support.muldiv == 1)) && strcmp (port->target, "pic16") != 0        /* don't shift for pic */
-      && strcmp (port->target, "pic14") != 0)
+  if ((p2 > 0) && !IS_FLOAT (letype) && !IS_FIXED (letype) &&
+      !((resultType == RESULT_TYPE_INT) && (getSize (resType) != getSize (ltype)) && (port->support.muldiv == 1)) &&
+      !TARGET_PIC_LIKE)      /* don't shift for pic */
     {
       if ((resultType == RESULT_TYPE_INT) && (getSize (resType) != getSize (ltype)))
         {
@@ -2202,7 +2241,7 @@ geniCodeSubtract (operand * left, operand * right, RESULT_TYPE resultType)
   sym_link *resType;
   LRTYPE;
 
-  /* if they both pointers then */
+  /* if they are both pointers then */
   if ((IS_PTR (ltype) || IS_ARRAY (ltype)) && (IS_PTR (rtype) || IS_ARRAY (rtype)))
     return geniCodePtrPtrSubtract (left, right);
 
@@ -2270,10 +2309,16 @@ geniCodeAdd (operand * left, operand * right, RESULT_TYPE resultType, int lvl)
       // there is no need to multiply with 1
       if (nBytes != 1)
         {
+          unsigned int ptrSize = getArraySizePtr (left);
           size = operandFromLit (nBytes);
           SPEC_USIGN (getSpec (operandType (size))) = 1;
           indexUnsigned = IS_UNSIGNED (getSpec (operandType (right)));
-          right = geniCodeMultiply (right, size, resultType);
+          if (!indexUnsigned && ptrSize > INTSIZE)
+            {
+              SPEC_LONG (getSpec (operandType (size))) = 1;
+              SPEC_CVAL (getSpec (operandType (size))).v_ulong = nBytes;
+            }
+          right = geniCodeMultiply (right, size, (ptrSize >= INTSIZE) ? RESULT_TYPE_INT : RESULT_TYPE_CHAR);
           /* Even if right is a 'unsigned char',
              the result will be a 'signed int' due to the promotion rules.
              It doesn't make sense when accessing arrays, so let's fix it here: */
@@ -2283,7 +2328,7 @@ geniCodeAdd (operand * left, operand * right, RESULT_TYPE resultType, int lvl)
       resType = copyLinkChain (ltype);
     }
   else
-    {                           // make them the same size
+    { // make them the same size
       resType = usualBinaryConversions (&left, &right, resultType, '+');
     }
 
@@ -2483,7 +2528,7 @@ geniCodePostInc (operand * op)
   operand *rOp;
   sym_link *optype = operandType (op);
   operand *result;
-  operand *rv = (IS_ITEMP (op) ? geniCodeRValue (op, (IS_PTR (optype) ? TRUE : FALSE)) : op);
+  operand *rv = (IS_ITEMP (op) ? geniCodeRValue (op, (!op->aggr2ptr && IS_PTR (optype)) ? TRUE : FALSE) : op);
   sym_link *rvtype = operandType (rv);
   int size = 0;
 
@@ -2531,7 +2576,7 @@ geniCodePreInc (operand * op, bool lvalue)
 {
   iCode *ic;
   sym_link *optype = operandType (op);
-  operand *rop = (IS_ITEMP (op) ? geniCodeRValue (op, (IS_PTR (optype) ? TRUE : FALSE)) : op);
+  operand *rop = (IS_ITEMP (op) ? geniCodeRValue (op, ((!op->aggr2ptr && IS_PTR (optype)) ? TRUE : FALSE)) : op);
   sym_link *roptype = operandType (rop);
   operand *result;
   int size = 0;
@@ -2573,7 +2618,7 @@ geniCodePostDec (operand * op)
   operand *rOp;
   sym_link *optype = operandType (op);
   operand *result;
-  operand *rv = (IS_ITEMP (op) ? geniCodeRValue (op, (IS_PTR (optype) ? TRUE : FALSE)) : op);
+  operand *rv = (IS_ITEMP (op) ? geniCodeRValue (op, ((!op->aggr2ptr && IS_PTR (optype)) ? TRUE : FALSE)) : op);
   sym_link *rvtype = operandType (rv);
   int size = 0;
 
@@ -2621,7 +2666,7 @@ geniCodePreDec (operand * op, bool lvalue)
 {
   iCode *ic;
   sym_link *optype = operandType (op);
-  operand *rop = (IS_ITEMP (op) ? geniCodeRValue (op, (IS_PTR (optype) ? TRUE : FALSE)) : op);
+  operand *rop = (IS_ITEMP (op) ? geniCodeRValue (op, ((!op->aggr2ptr && IS_PTR (optype)) ? TRUE : FALSE)) : op);
   sym_link *roptype = operandType (rop);
   operand *result;
   int size = 0;
@@ -2890,8 +2935,7 @@ geniCodeLogic (operand * left, operand * right, int op, ast * tree)
         {
         case CCR_ALWAYS_TRUE:
         case CCR_ALWAYS_FALSE:
-          if (!options.lessPedantic)
-            werror (W_COMP_RANGE, "true resp. false");
+          werror (W_COMP_RANGE, "true resp. false");
           return operandFromLit (ccr_result == CCR_ALWAYS_TRUE ? 1 : 0);
         default:
           break;
@@ -2937,7 +2981,7 @@ geniCodeLogic (operand * left, operand * right, int op, ast * tree)
         }
     }
 
-  ctype = usualBinaryConversions (&left, &right, RESULT_TYPE_BIT, 0);
+  ctype = usualBinaryConversions (&left, &right, RESULT_TYPE_BOOL, op);
 
   ic = newiCode (op, left, right);
   /* store 0 or 1 in result */
@@ -3029,11 +3073,11 @@ geniCodeLogicAndOr (ast * tree, int lvl)
 /* geniCodeUnary - for a generic unary operation                   */
 /*-----------------------------------------------------------------*/
 operand *
-geniCodeUnary (operand * op, int oper)
+geniCodeUnary (operand * op, int oper, sym_link * resType)
 {
   iCode *ic = newiCode (oper, op, NULL);
 
-  IC_RESULT (ic) = newiTempOperand (operandType (op), 0);
+  IC_RESULT (ic) = newiTempOperand (resType, 0);
   ADDTOCHAIN (ic);
   return IC_RESULT (ic);
 }
@@ -3042,11 +3086,11 @@ geniCodeUnary (operand * op, int oper)
 /* geniCodeBinary - for a generic binary operation                 */
 /*-----------------------------------------------------------------*/
 operand *
-geniCodeBinary (operand * left, operand * right, int oper)
+geniCodeBinary (operand * left, operand * right, int oper, sym_link * resType)
 {
   iCode *ic = newiCode (oper, left, right);
 
-  IC_RESULT (ic) = newiTempOperand (operandType (left), 0);
+  IC_RESULT (ic) = newiTempOperand (resType, 0);
   ADDTOCHAIN (ic);
   return IC_RESULT (ic);
 }
@@ -3125,7 +3169,7 @@ checkTypes (operand * left, operand * right)
       werror (W_LIT_OVERFLOW);
     }
 
-  if (always_cast || compareType (ltype, rtype) < 0)
+  if (always_cast || compareType (ltype, rtype) == -1)
     right = geniCodeCast (ltype, right, TRUE);
   checkPtrQualifiers (ltype, rtype);
   return right;
@@ -3621,7 +3665,7 @@ geniCodeJumpTable (operand * cond, value * caseVals, ast * tree)
 
   /* the criteria for creating a jump table is */
   /* all integer numbers between the maximum & minimum must */
-  /* be present , the maximum value should not exceed 255 */
+  /* be present, the maximum value should not exceed 255 */
   /* If not all integer numbers are present the algorithm */
   /* inserts jumps to the default label for the missing numbers */
   /* and decides later whether it is worth it */
@@ -4225,30 +4269,26 @@ ast2iCode (ast * tree, int lvl)
     case RRC:
     case RLC:
     case SWAP:
-      return geniCodeUnary (geniCodeRValue (left, FALSE), tree->opval.op);
+      return geniCodeUnary (geniCodeRValue (left, FALSE), tree->opval.op, tree->ftype);
 
     case '!':
     case GETHBIT:
       {
-        operand *op = geniCodeUnary (geniCodeRValue (left, FALSE), tree->opval.op);
-        if (!IS_BOOLEAN (operandType (op)))
-          setOperandType (op, UCHARTYPE);
+        operand *op = geniCodeUnary (geniCodeRValue (left, FALSE), tree->opval.op, tree->ftype);
         return op;
       }
     case GETABIT:
       {
         operand *op = geniCodeBinary (geniCodeRValue (left, FALSE),
                                       geniCodeRValue (right, FALSE),
-                                      tree->opval.op);
-        if (!IS_BOOLEAN (operandType (op)))
-          setOperandType (op, UCHARTYPE);
+                                      tree->opval.op, tree->ftype);
         return op;
       }
     case GETBYTE:
       {
         operand *op = geniCodeBinary (geniCodeRValue (left, FALSE),
                                       geniCodeRValue (right, FALSE),
-                                      tree->opval.op);
+                                      tree->opval.op, tree->ftype);
         setOperandType (op, UCHARTYPE);
         return op;
       }
@@ -4256,7 +4296,7 @@ ast2iCode (ast * tree, int lvl)
       {
         operand *op = geniCodeBinary (geniCodeRValue (left, FALSE),
                                       geniCodeRValue (right, FALSE),
-                                      tree->opval.op);
+                                      tree->opval.op, tree->ftype);
         setOperandType (op, UINTTYPE);
         return op;
       }

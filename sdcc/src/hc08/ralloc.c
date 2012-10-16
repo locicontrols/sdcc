@@ -61,7 +61,7 @@ _G;
 /* Shared with gen.c */
 int hc08_ptrRegReq;             /* one byte pointer register required */
 
-/* 8051 registers */
+/* 6808 registers */
 reg_info regshc08[] =
 {
 
@@ -2781,12 +2781,182 @@ packForPush (iCode * ic, eBBlock ** ebpp, int blockno)
         }
       bitVectUnSetBit(OP_SYMBOL(IC_RESULT(dic))->defs,dic->key);
     }
+  if (IS_ITEMP (IC_RIGHT (dic)))
+    OP_USES (IC_RIGHT (dic)) = bitVectSetBit (OP_USES (IC_RIGHT (dic)), ic->key);
 
   /* we now we know that it has one & only one def & use
      and the that the definition is an assignment */
   ReplaceOpWithCheaperOp(&IC_LEFT (ic), IC_RIGHT (dic));
   remiCodeFromeBBlock (ebp, dic);
   hTabDeleteItem (&iCodehTab, dic->key, dic, DELETE_ITEM, NULL);
+}
+
+/*------------------------------------------------------------------*/
+/* moveSendToCall - move SEND to immediately precede its CALL/PCALL */
+/*------------------------------------------------------------------*/
+static iCode *
+moveSendToCall (iCode *sic, eBBlock *ebp)
+{
+  iCode * prev = sic->prev;
+  iCode * sic2 = NULL;
+  iCode * cic;
+  
+  /* Go find the CALL/PCALL */
+  cic = sic;
+  while (cic && cic->op != CALL && cic->op != PCALL)
+    cic = cic->next;
+  if (!cic)
+    return sic;
+
+  /* Is there a second SEND? If so, we'll need to move it too. */
+  if (sic->next->op == SEND)
+    sic2 = sic->next;
+  
+  /* relocate the SEND(s) */
+  remiCodeFromeBBlock (ebp, sic);
+  addiCodeToeBBlock (ebp, sic, cic);
+  if (sic2)
+    {
+      remiCodeFromeBBlock (ebp, sic2);
+      addiCodeToeBBlock (ebp, sic2, cic);
+    }
+
+  /* Return the iCode to continue processing at. */
+  if (prev)
+    return prev->next;
+  else
+    return ebp->sch;
+}
+
+
+/*---------------------------------------------------------------------*/
+/* packPointerOp - see if we can move an offset from addition iCode    */
+/*                 to the pointer iCode to used indexed addr mode      */
+/* The z80-related ports do a similar thing in SDCCopt.c, offsetFold() */
+/*---------------------------------------------------------------------*/
+static void
+packPointerOp (iCode * ic, eBBlock ** ebpp)
+{
+  operand * pointer;
+  operand * offsetOp;
+  operand * nonOffsetOp;
+  iCode * dic;
+  iCode * uic;
+  int key;
+
+  if (POINTER_SET (ic))
+    {
+      pointer = IC_RESULT (ic);
+      offsetOp = IC_LEFT (ic);
+    }
+  else if (POINTER_GET (ic))
+    {
+      pointer = IC_LEFT (ic);
+      offsetOp = IC_RIGHT (ic);
+    }
+  else
+    return;
+
+  if (!IS_ITEMP (pointer))
+    return;
+
+  /* If the pointer is rematerializable, it's already fully optimized */
+  if (OP_SYMBOL (pointer)->remat)
+    return;
+
+  if (offsetOp && IS_OP_LITERAL (offsetOp) && operandLitValue (offsetOp) != 0)
+    return;
+  if (offsetOp && IS_SYMOP (offsetOp))
+    return;
+
+  /* There must be only one definition */
+  if (bitVectnBitsOn (OP_DEFS (pointer)) != 1)
+    return;
+  /* find the definition */
+  if (!(dic = hTabItemWithKey (iCodehTab, bitVectFirstBit (OP_DEFS (pointer)))))
+    return;
+
+  if (dic->op == '+' && (IS_OP_LITERAL (IC_RIGHT (dic)) ||
+                        (IS_ITEMP (IC_RIGHT (dic)) && OP_SYMBOL (IC_RIGHT (dic))->remat)))
+    {
+      nonOffsetOp = IC_LEFT (dic);
+      offsetOp = IC_RIGHT (dic);
+    }
+  else if (dic->op == '+' && IS_ITEMP (IC_LEFT (dic)) && OP_SYMBOL (IC_LEFT (dic))->remat)
+    {
+      nonOffsetOp = IC_RIGHT (dic);
+      offsetOp = IC_LEFT (dic);
+    }
+  else
+    return;
+
+
+  /* Now check all of the uses to make sure they are all get/set pointer */
+  /* and don't already have a non-zero offset operand */
+  for (key=0; key<OP_USES (pointer)->size; key++)
+    {
+      if (bitVectBitValue (OP_USES (pointer), key))
+        {
+          uic = hTabItemWithKey (iCodehTab, key);
+          if (POINTER_GET (uic))
+            {
+              if (IC_RIGHT (uic) && IS_OP_LITERAL (IC_RIGHT (uic)) && operandLitValue (IC_RIGHT (uic)) != 0)
+                return;
+              if (IC_RIGHT (uic) && IS_SYMOP (IC_RIGHT (uic)))
+                return;
+            }
+          else if (POINTER_SET (uic))
+            {
+              if (IC_LEFT (uic) && IS_OP_LITERAL (IC_LEFT (uic)) && operandLitValue (IC_LEFT (uic)) != 0)
+                return;
+              if (IC_LEFT (uic) && IS_SYMOP (IC_LEFT (uic)))
+                return;
+            }
+          else
+            return;
+        }
+    }
+
+  /* Everything checks out. Move the literal or rematerializable offset */
+  /* to the pointer get/set iCodes */
+  for (key=0; key<OP_USES (pointer)->size; key++)
+    {
+      if (bitVectBitValue (OP_USES (pointer), key))
+        {
+          uic = hTabItemWithKey (iCodehTab, key);
+          if (POINTER_GET (uic))
+            {
+              IC_RIGHT (uic) = offsetOp;
+              if (IS_SYMOP (offsetOp))
+                OP_USES (offsetOp) = bitVectSetBit (OP_USES (offsetOp), key);
+            }
+          else if (POINTER_SET (uic))
+            {
+              IC_LEFT (uic) = offsetOp;
+              if (IS_SYMOP (offsetOp))
+                OP_USES (offsetOp) = bitVectSetBit (OP_USES (offsetOp), key);
+            }
+          else
+            return;
+        }
+    }
+
+  /* Put the remaining operand on the right and convert to assignment     */
+  /* or cast (Sometimes the operands to the addition are different sizes, */
+  /* so there is an implicit cast. If so, need to make it explicit so     */
+  /* that all the bytes of the pointer are defined. */
+  if (IS_SYMOP (offsetOp))
+    bitVectUnSetBit (OP_USES (offsetOp), dic->key);
+  IC_RIGHT (dic) = nonOffsetOp;
+  IC_LEFT (dic) = NULL;
+  SET_ISADDR (IC_RESULT (dic), 0);
+  if (getSize (operandType (pointer)) == getSize (operandType (nonOffsetOp)))
+    dic->op = '=';
+  else
+    {
+      dic->op = CAST;
+      IC_LEFT (dic) = operandFromLink (operandType (pointer));
+    }
 }
 
 /*-----------------------------------------------------------------*/
@@ -2820,7 +2990,14 @@ packRegisters (eBBlock ** ebpp, int blockno)
   for (ic = ebp->sch; ic; ic = ic->next)
     {
       //packRegsForLiteral (ic);
-
+      
+      /* move SEND to immediately precede its CALL/PCALL */
+      if (ic->op == SEND && ic->next &&
+          ic->next->op != CALL && ic->next->op != PCALL)
+        {
+          ic = moveSendToCall (ic, ebp);
+        }
+      
       /* if this is an itemp & result of an address of a true sym
          then mark this as rematerialisable   */
       if (ic->op == ADDRESS_OF &&
@@ -2833,18 +3010,7 @@ packRegisters (eBBlock ** ebpp, int blockno)
           OP_SYMBOL (IC_RESULT (ic))->rematiCode = ic;
           OP_SYMBOL (IC_RESULT (ic))->usl.spillLoc = NULL;
         }
-#if 1
-      if (ic->op == '=' &&
-          !POINTER_SET (ic) &&
-          IS_ITEMP (IC_RESULT (ic)) &&
-          IS_VALOP (IC_RIGHT (ic)) &&
-          bitVectnBitsOn (OP_DEFS (IC_RESULT (ic))) == 1)
-        {
-          OP_SYMBOL (IC_RESULT (ic))->remat = 1;
-          OP_SYMBOL (IC_RESULT (ic))->rematiCode = ic;
-          OP_SYMBOL (IC_RESULT (ic))->usl.spillLoc = NULL;
-        }
-#endif
+
       /* if straight assignment then carry remat flag if
          this is the only definition */
       if (ic->op == '=' &&
@@ -2925,6 +3091,9 @@ packRegisters (eBBlock ** ebpp, int blockno)
         {
           packForPush (ic, ebpp, blockno);
         }
+
+      if (POINTER_SET (ic) || POINTER_GET (ic))
+        packPointerOp (ic, ebpp);
 
       if (0) /* TODO: Old allocator! */
         packRegsForAccUse (ic);

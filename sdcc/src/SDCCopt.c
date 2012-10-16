@@ -73,6 +73,8 @@ cnvToFcall (iCode * ic, eBBlock * ebp)
       bitVectUnSetBit (OP_USES (left), ic->key);
   if (IS_SYMOP (right))
       bitVectUnSetBit (OP_USES (right), ic->key);
+  if (IS_SYMOP (IC_RESULT (ic)))
+      bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
 
   if (IS_FLOAT (operandType (right)))
     {
@@ -228,7 +230,7 @@ cnvToFcall (iCode * ic, eBBlock * ebp)
   newic = newiCode (CALL, operandFromSymbol (func), NULL);
   IC_RESULT (newic) = IC_RESULT (ic);
   bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
-  OP_USES (IC_RESULT (newic)) = bitVectSetBit (OP_USES (IC_RESULT (newic)), newic->key);
+  OP_DEFS (IC_RESULT (newic)) = bitVectSetBit (OP_DEFS (IC_RESULT (newic)), newic->key);
   newic->filename = filename;
   newic->lineno = lineno;
   newic->parmBytes += bytesPushed;
@@ -270,6 +272,11 @@ cnvToFloatCast (iCode * ic, eBBlock * ebp)
   ip = ic->next;
   /* remove it from the iCode */
   remiCodeFromeBBlock (ebp, ic);
+  if (IS_SYMOP (IC_RIGHT (ic)))
+      bitVectUnSetBit (OP_USES (IC_RIGHT (ic)), ic->key);
+  if (IS_SYMOP (IC_RESULT (ic)))
+      bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
+
   /* depending on the type */
   for (bwd = 0; bwd < 4; bwd++)
     {
@@ -309,6 +316,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = linenno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
   else
     {
@@ -327,6 +336,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = linenno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
 
   /* make the call */
@@ -355,6 +366,8 @@ found:
   addiCodeToeBBlock (ebp, newic, ip);
   newic->filename = filename;
   newic->lineno = linenno;
+  if (IS_SYMOP (IC_RESULT (ic)))
+    OP_DEFS (IC_RESULT (ic)) = bitVectSetBit (OP_DEFS (IC_RESULT (ic)), newic->key);
 }
 
 /*----------------------------------------------------------------------*/
@@ -373,6 +386,11 @@ cnvToFixed16x16Cast (iCode * ic, eBBlock * ebp)
   ip = ic->next;
   /* remove it from the iCode */
   remiCodeFromeBBlock (ebp, ic);
+  if (IS_SYMOP (IC_RIGHT (ic)))
+      bitVectUnSetBit (OP_USES (IC_RIGHT (ic)), ic->key);
+  if (IS_SYMOP (IC_RESULT (ic)))
+      bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
+
   /* depending on the type */
   for (bwd = 0; bwd < 4; bwd++)
     {
@@ -405,6 +423,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = linenno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
   else
     {
@@ -423,6 +443,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = linenno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
 
   /* make the call */
@@ -451,6 +473,8 @@ found:
   addiCodeToeBBlock (ebp, newic, ip);
   newic->filename = filename;
   newic->lineno = linenno;
+  if (IS_SYMOP (IC_RESULT (ic)))
+    OP_DEFS (IC_RESULT (ic)) = bitVectSetBit (OP_DEFS (IC_RESULT (ic)), newic->key);
 }
 
 /*-----------------------------------------------------------------*/
@@ -470,6 +494,10 @@ cnvFromFloatCast (iCode * ic, eBBlock * ebp)
   ip = ic->next;
   /* remove it from the iCode */
   remiCodeFromeBBlock (ebp, ic);
+  if (IS_SYMOP (IC_RIGHT (ic)))
+      bitVectUnSetBit (OP_USES (IC_RIGHT (ic)), ic->key);
+  if (IS_SYMOP (IC_RESULT (ic)))
+      bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
 
   /* depending on the type */
   for (bwd = 0; bwd < 4; bwd++)
@@ -503,6 +531,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = lineno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
   else
     {
@@ -521,6 +551,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = lineno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
 
   /* make the call */
@@ -549,6 +581,8 @@ found:
   addiCodeToeBBlock (ebp, newic, ip);
   newic->filename = filename;
   newic->lineno = lineno;
+  if (IS_SYMOP (IC_RESULT (ic)))
+    OP_DEFS (IC_RESULT (ic)) = bitVectSetBit (OP_DEFS (IC_RESULT (ic)), newic->key);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -568,6 +602,10 @@ cnvFromFixed16x16Cast (iCode * ic, eBBlock * ebp)
   ip = ic->next;
   /* remove it from the iCode */
   remiCodeFromeBBlock (ebp, ic);
+  if (IS_SYMOP (IC_RIGHT (ic)))
+      bitVectUnSetBit (OP_USES (IC_RIGHT (ic)), ic->key);
+  if (IS_SYMOP (IC_RESULT (ic)))
+      bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
 
   /* depending on the type */
   for (bwd = 0; bwd < 4; bwd++)
@@ -608,6 +646,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = lineno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
   else
     {
@@ -626,6 +666,8 @@ found:
       addiCodeToeBBlock (ebp, newic, ip);
       newic->filename = filename;
       newic->lineno = lineno;
+      if (IS_SYMOP (IC_RIGHT (ic)))
+          OP_USES (IC_RIGHT (ic)) = bitVectSetBit (OP_USES (IC_RIGHT (ic)), newic->key);
     }
 
   /* make the call */
@@ -654,6 +696,8 @@ found:
   addiCodeToeBBlock (ebp, newic, ip);
   newic->filename = filename;
   newic->lineno = lineno;
+  if (IS_SYMOP (IC_RESULT (ic)))
+    OP_DEFS (IC_RESULT (ic)) = bitVectSetBit (OP_DEFS (IC_RESULT (ic)), newic->key);
 }
 
 extern operand *geniCodeRValue (operand *, bool);
@@ -833,7 +877,7 @@ found:
   newic = newiCode (CALL, operandFromSymbol (func), NULL);
   IC_RESULT (newic) = IC_RESULT (ic);
   bitVectUnSetBit (OP_DEFS (IC_RESULT (ic)), ic->key);
-  OP_USES (IC_RESULT (newic)) = bitVectSetBit (OP_USES (IC_RESULT (newic)), newic->key);
+  OP_DEFS (IC_RESULT (newic)) = bitVectSetBit (OP_DEFS (IC_RESULT (newic)), newic->key);
   newic->filename = filename;
   newic->lineno = lineno;
   newic->parmBytes+=bytesPushed; // to clear the stack after the call
@@ -890,17 +934,30 @@ convbuiltin (iCode *const ic, eBBlock *ebp)
 
   /* Now we can be sure to have found a builtin function. */
 
-  if ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) && (!strcmp (bif->name, "__builtin_memcpy") || !strcmp (bif->name, "__builtin_memset")))
+  if ((!strcmp (bif->name, "__builtin_memcpy") || !strcmp (bif->name, "__builtin_strncpy") || !strcmp (bif->name, "__builtin_memset")) &&
+    IS_OP_LITERAL (IC_LEFT (lastparam)) && !operandLitValue (IC_LEFT (lastparam)))
+    {
+      /* We have a builtin that does nothing. */
+      /* TODO: Eliminate it, convert any SEND of volatile into DUMMY_READ_VOLATILE. */
+      /* For now just convert back to call to make sure any volatiles are read. */
+
+      strcpy(OP_SYMBOL (IC_LEFT (icc))->rname, !strcmp (bif->name, "__builtin_memcpy") ? "_memcpy" : (!strcmp (bif->name, "__builtin_strncpy") ? "_strncpy" : "_memset"));
+      goto convert;
+    }
+
+  if ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) && (!strcmp (bif->name, "__builtin_memcpy") || !strcmp (bif->name, "__builtin_strncpy") || !strcmp (bif->name, "__builtin_memset")))
     {
       /* Replace iff return value is used or last parameter is not an integer constant. */
       if (bitVectIsZero (OP_USES (IC_RESULT (icc))) && IS_OP_LITERAL (IC_LEFT (lastparam)))
         return;
       
-      strcpy(OP_SYMBOL (IC_LEFT (icc))->rname, !strcmp (bif->name, "__builtin_memcpy") ? "_memcpy" : "_memset");
+      strcpy(OP_SYMBOL (IC_LEFT (icc))->rname, !strcmp (bif->name, "__builtin_memcpy") ? "_memcpy" : (!strcmp (bif->name, "__builtin_strncpy") ? "_strncpy" : "_memset"));
+      goto convert;
     }
-  else
-    return;
+  
+  return;
 
+convert:
   /* Convert parameter passings from SEND to PUSH. */
   stack = 0;
   for (icc = ic; icc->op != CALL; icc = icc->next)
@@ -1919,8 +1976,8 @@ optimizeCastCast (eBBlock ** ebbs, int count)
               /* integer type that has no loss of bits */
               if (!IS_INTEGRAL (type1) || !IS_INTEGRAL (type2))
                 continue;
-              size1 = getSize (type1);
-              size2 = getSize (type2);
+              size1 = bitsForType (type1);
+              size2 = bitsForType (type2);
               if (size2 < size1)
                 continue;
               /* If they are the same size, they must have the same signedness */
@@ -1942,7 +1999,7 @@ optimizeCastCast (eBBlock ** ebbs, int count)
               type3 = operandType (IC_RESULT (uic));
               if (!IS_INTEGRAL (type3))
                  continue;
-              size3 = getSize (type3);
+              size3 = bitsForType (type3);
               if (size3 < size2)
                  continue;
               /* If they are the same size, they must have the same signedness */
@@ -1970,7 +2027,8 @@ optimizeCastCast (eBBlock ** ebbs, int count)
     }
 }
 
-/* Fold pointer addition into offset of GET_VALUE_AT_ADDRESS */
+/* Fold pointer addition into offset of GET_VALUE_AT_ADDRESS.                  */
+/* The hc08-related ports do a similar thing in hc08/ralloc.c, packPointerOp() */
 static void
 offsetFold (eBBlock **ebbs, int count)
 {
@@ -1978,7 +2036,7 @@ offsetFold (eBBlock **ebbs, int count)
   iCode *ic;
   iCode *uic;
 
-  if (!TARGET_IS_Z80 && !TARGET_IS_Z180 && !TARGET_IS_RABBIT && !TARGET_HC08_LIKE)
+  if (!TARGET_IS_Z80 && !TARGET_IS_Z180 && !TARGET_IS_RABBIT)
     return;
 
   for (i = 0; i < count; i++)
@@ -1994,7 +2052,7 @@ offsetFold (eBBlock **ebbs, int count)
               if (bitVectnBitsOn (OP_USES (IC_RESULT (ic))) != 1)
                 continue;
 
-              /* This use must be a GET_VALUE_ATA_DDRESS */
+              /* This use must be a GET_VALUE_TA_DDRESS */
               uic = hTabItemWithKey (iCodehTab,
                         bitVectFirstBit (OP_USES (IC_RESULT (ic))));
               if (!POINTER_GET (uic))
@@ -2142,6 +2200,19 @@ eBBlockFromiCode (iCode * ic)
 
   offsetFold (ebbi->bbOrder, ebbi->count);
 
+  /* lospre */
+  adjustIChain (ebbi->bbOrder, ebbi->count);
+  ic = iCodeLabelOptimize (iCodeFromeBBlock (ebbi->bbOrder, ebbi->count));
+  if (optimize.lospre && (TARGET_Z80_LIKE || TARGET_HC08_LIKE)) /* Todo: enable for other ports. */
+    lospre (ic, ebbi);
+  /* Break down again and redo some steps to not confuse live range analysis. */
+  ebbi = iCodeBreakDown (ic);
+  computeControlFlow (ebbi);
+  loops = createLoopRegions (ebbi);
+  computeDataFlow (ebbi);
+
+  killDeadCode (ebbi);
+
   /* sort it back by block number */
   //qsort (ebbs, saveCount, sizeof (eBBlock *), bbNumCompare);
 
@@ -2152,9 +2223,9 @@ eBBlockFromiCode (iCode * ic)
      other support routines, since we can assume that there is no
      bank switching happening in those other support routines
      (but assume that it can happen in other functions) */
-  adjustIChain(ebbi->bbOrder, ebbi->count);
+  adjustIChain (ebbi->bbOrder, ebbi->count);
   ic = iCodeLabelOptimize (iCodeFromeBBlock (ebbi->bbOrder, ebbi->count));
-  if(switchAddressSpacesOptimally (ic, ebbi))
+  if (switchAddressSpacesOptimally (ic, ebbi))
     switchAddressSpaces (ic); /* Fallback. Very unlikely to be triggered, unless --max-allocs-per-node is set to very small values or very weird control-flow graphs */
 
   /* Break down again and redo some steps to not confuse live range analysis. */
@@ -2218,3 +2289,4 @@ eBBlockFromiCode (iCode * ic)
 
   return NULL;
 }
+

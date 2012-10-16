@@ -46,7 +46,7 @@ newCseDef (operand * sym, iCode * ic)
   cdp->fromGlobal = 0;
   cdp->fromAddrTaken = 0;
 
-  if (ic->op!=IF && ic->op!=JUMPTABLE)
+  if (ic->op != IF && ic->op != JUMPTABLE)
     {
       if (ic->op != ADDRESS_OF && IC_LEFT (ic) && IS_SYMOP (IC_LEFT (ic)))
         {
@@ -54,7 +54,8 @@ newCseDef (operand * sym, iCode * ic)
           if (isOperandGlobal (IC_LEFT (ic)))
             {
               map = SPEC_OCLS (getSpec (operandType (IC_LEFT (ic))));
-              cdp->fromGlobal |= (1 << map->ptrType);
+              if (map)
+                cdp->fromGlobal |= (1 << map->ptrType);
             }
           cdp->fromAddrTaken |= OP_SYMBOL (IC_LEFT (ic))->addrtaken;
         }
@@ -64,7 +65,8 @@ newCseDef (operand * sym, iCode * ic)
           if (isOperandGlobal (IC_RIGHT (ic)))
             {
               map = SPEC_OCLS (getSpec (operandType (IC_RIGHT (ic))));
-              cdp->fromGlobal |= (1 << map->ptrType);
+              if (map)
+                cdp->fromGlobal |= (1 << map->ptrType);
             }
           cdp->fromAddrTaken |= OP_SYMBOL (IC_RIGHT (ic))->addrtaken;
         }
@@ -130,7 +132,6 @@ isCseDefEqual (void *vsrc, void *vdest)
 
   return (src->key == dest->key &&
           src->diCode == dest->diCode);
-
 }
 
 /*-----------------------------------------------------------------*/
@@ -1318,6 +1319,8 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
         }
       if (IS_OP_LITERAL (IC_RIGHT (ic)))
         {
+          unsigned val;
+
           /* if BITWISEAND then check if one of them is a zero */
           /* if yes turn it into 0 assignment */
           if (operandLitValue (IC_RIGHT (ic)) == 0.0)
@@ -1337,24 +1340,24 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
             }
           /* if BITWISEAND then check if one of them is 0xff... */
           /* if yes turn it into assignment */
-          {
-            unsigned val;
-
-            switch (getSize (operandType (IC_RIGHT (ic))))
-              {
-              case 1:
-                val = 0xff;
-                break;
-              case 2:
-                val = 0xffff;
-                break;
-              case 4:
-                val = 0xffffffff;
-                break;
-              default:
-                return;
-              }
-            if (((unsigned) double2ul (operandLitValue (IC_RIGHT (ic))) & val) == val)
+          switch (bitsForType (operandType (IC_RIGHT (ic))))
+            {
+            case 1:
+              val = 0x01;
+              break;
+            case 8:
+              val = 0xff;
+              break;
+            case 16:
+              val = 0xffff;
+              break;
+            case 32:
+              val = 0xffffffff;
+              break;
+            default:
+              return;
+            }
+          if (((unsigned) double2ul (operandLitValue (IC_RIGHT (ic))) & val) == val)
             {
               ic->op = '=';
               IC_RIGHT (ic) = IC_LEFT (ic);
@@ -1362,7 +1365,6 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
               SET_RESULT_RIGHT (ic);
               return;
             }
-          }
         }
       break;
     case '|':
@@ -1408,15 +1410,18 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
             }
           /* if BITWISEOR then check if one of them is 0xff... */
           /* if yes turn it into 0xff... assignment */
-          switch (getSize (operandType (IC_RIGHT (ic))))
+          switch (bitsForType (operandType (IC_RIGHT (ic))))
             {
               case 1:
+                val = 0x01;
+                break;
+              case 8:
                 val = 0xff;
                 break;
-              case 2:
+              case 16:
                 val = 0xffff;
                 break;
-              case 4:
+              case 32:
                 val = 0xffffffff;
                 break;
               default:
@@ -1481,6 +1486,29 @@ algebraicOpts (iCode * ic, eBBlock * ebp)
             {
               ic->op = '=';
               IC_RIGHT (ic) = IC_LEFT (ic);
+              IC_LEFT (ic) = NULL;
+              SET_RESULT_RIGHT (ic);
+              return;
+            }
+        }
+      /* if XOR then check if one of them is a zero or one */
+      /* if yes turn it into assignment or invert */
+      if (IS_OP_LITERAL (IC_RIGHT (ic)) &&
+          IS_BOOLEAN (operandType (IC_LEFT (ic))) &&
+          IS_BOOLEAN (operandType (IC_RESULT (ic)))
+         )
+        {
+          double litval = operandLitValue (IC_RIGHT (ic));
+          if (litval == 1.0)
+            {
+              ic->op = '!';
+              IC_RIGHT (ic) = NULL;
+              return;
+            }
+          else
+            {
+              ic->op = '=';
+              IC_RIGHT (ic) = operandFromLit (1);
               IC_LEFT (ic) = NULL;
               SET_RESULT_RIGHT (ic);
               return;
@@ -1672,10 +1700,7 @@ ifxOptimize (iCode * ic, set * cseSet,
       /* too often, if it does happen then the user pays */
       /* the price */
       computeControlFlow (ebbi);
-      if (!options.lessPedantic)
-        {
-          werrorfl (ic->filename, ic->lineno, W_CONTROL_FLOW);
-        }
+      werrorfl (ic->filename, ic->lineno, W_CONTROL_FLOW);
       return;
     }
 
@@ -1686,10 +1711,7 @@ ifxOptimize (iCode * ic, set * cseSet,
   if (elementsInSet (ebb->succList) == 1 &&
       isinSet (ebb->succList, eBBWithEntryLabel (ebbi, label)))
     {
-      if (!options.lessPedantic)
-        {
-          werrorfl (ic->filename, ic->lineno, W_CONTROL_FLOW);
-        }
+      werrorfl (ic->filename, ic->lineno, W_CONTROL_FLOW);
       if (IS_OP_VOLATILE (IC_COND (ic)))
         {
           IC_RIGHT (ic) = IC_COND (ic);
@@ -2081,7 +2103,7 @@ cseBBlock (eBBlock * ebb, int computeOnly, ebbIndex * ebbi)
         }
 
       /* clear the def & use chains for the operands involved */
-      /* in this operation . since it can change due to opts  */
+      /* in this operation since it can change due to opts    */
       unsetDefsAndUses (ic);
 
       if (ic->op == PCALL || ic->op == CALL || ic->op == RECEIVE)

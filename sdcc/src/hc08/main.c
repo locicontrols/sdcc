@@ -406,13 +406,13 @@ hc08_dwarfRegNum (const struct reg_info *reg)
 */
 static const char *_linkCmd[] =
 {
-  "sdld6808", "-nf", "\"$1\"", NULL
+  "sdld6808", "-nf", "$1", NULL
 };
 
 /* $3 is replaced by assembler.debug_opts resp. port->assembler.plain_opts */
 static const char *_asmCmd[] =
 {
-  "sdas6808", "$l", "$3", "\"$2\"", "\"$1.asm\"", NULL
+  "sdas6808", "$l", "$3", "$2", "$1.asm", NULL
 };
 
 static const char * const _libs_hc08[] = { "hc08", NULL, };
@@ -435,7 +435,7 @@ PORT hc08_port =
   {
     _asmCmd,
     NULL,
-    "-plosgffwc",               /* Options with debug */
+    "-plosgffwy",               /* Options with debug */
     "-plosgffw",                /* Options without debug */
     0,
     ".asm",
@@ -479,6 +479,8 @@ PORT hc08_port =
     "CABS    (ABS,CODE)", // cabs_name - const absolute data (code or not)
     "XABS    (ABS)",      // xabs_name - absolute xdata
     "IABS    (ABS)",      // iabs_name - absolute data
+    NULL,                 // name of segment for initialized variables
+    NULL,                 // name of segment for copies of initialized variables in code space
     NULL,
     NULL,
     1
@@ -553,7 +555,8 @@ PORT hc08_port =
   NULL,                         /* no builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  3,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 
@@ -573,7 +576,7 @@ PORT s08_port =
   {
     _asmCmd,
     NULL,
-    "-plosgffwc",               /* Options with debug */
+    "-plosgffwy",               /* Options with debug */
     "-plosgffw",                /* Options without debug */
     0,
     ".asm",
@@ -617,6 +620,8 @@ PORT s08_port =
     "CABS    (ABS,CODE)", // cabs_name - const absolute data (code or not)
     "XABS    (ABS)",      // xabs_name - absolute xdata
     "IABS    (ABS)",      // iabs_name - absolute data
+    NULL,                 // name of segment for initialized variables
+    NULL,                 // name of segment for copies of initialized variables in code space
     NULL,
     NULL,
     1
@@ -691,7 +696,8 @@ PORT s08_port =
   NULL,                         /* no builtin functions */
   GPOINTER,                     /* treat unqualified pointers as "generic" pointers */
   1,                            /* reset labelKey to 1 */
-  1,                            /* globals & local static allowed */
+  1,                            /* globals & local statics allowed */
+  3,                            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 

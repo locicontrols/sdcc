@@ -5,7 +5,7 @@
     it easier to set a breakpoint using the debugger.
 */
 #include "common.h"
-#include "SDCCsystem.h"
+#include "dbuf_string.h"
 #include "SDCCmacro.h"
 
 #include "device.h"
@@ -90,7 +90,7 @@ static const char *_linkCmd[] =
 
 static const char *_asmCmd[] =
 {
-  "gpasm", "$l", "$3", "-o", "\"$2\"", "-c", "\"$1.asm\"", NULL
+  "gpasm", "$l", "$3", "-o", "$2", "-c", "$1.asm", NULL
 };
 
 static void
@@ -113,7 +113,7 @@ _pic14_regparm (sym_link * l, bool reentrant)
   can pass only the first parameter in a register */
   //if (regParmFlg)
   //  return 0;
-  
+
   regParmFlg++;// = 1;
   return 1;
 }
@@ -130,10 +130,43 @@ _pic14_parseOptions (int *pargc, char **argv, int *i)
 static void
 _pic14_finaliseOptions (void)
 {
+  struct dbuf_s dbuf;
+
   pCodeInitRegisters();
-  
+
   port->mem.default_local_map = data;
   port->mem.default_globl_map = data;
+
+  dbuf_init (&dbuf, 512);
+  dbuf_printf (&dbuf, "-D__SDCC_PROCESSOR=\"%s\"", port->processor);
+  addSet (&preArgvSet, Safe_strdup (dbuf_detach_c_str (&dbuf)));
+
+/*
+ * deprecated in sdcc 3.2.0
+ * TODO: should be obsoleted in sdcc 3.3.0 or later
+  if (options.std_sdcc)
+ */
+    {
+      dbuf_set_length (&dbuf, 0);
+      dbuf_printf (&dbuf, "-DSDCC_PROCESSOR=\"%s\"", port->processor);
+      addSet (&preArgvSet, dbuf_detach_c_str (&dbuf));
+    }
+
+    {
+      char *upperProc, *p1, *p2;
+      int len;
+
+      dbuf_set_length (&dbuf, 0);
+      len = strlen (port->processor);
+      upperProc = Safe_malloc (len);
+      for (p1 = port->processor, p2 = upperProc; *p1; ++p1, ++p2)
+        {
+          *p2 = toupper (*p1);
+        }
+      dbuf_append (&dbuf, "-D__SDCC_PIC", sizeof ("-D__SDCC_PIC") - 1);
+      dbuf_append (&dbuf, upperProc, len);
+      addSet (&preArgvSet, dbuf_detach_c_str (&dbuf));
+    }
 }
 
 static void
@@ -153,13 +186,13 @@ static void
 _pic14_genAssemblerPreamble (FILE * of)
 {
   char * name = processor_base_name();
-  
+
   if(!name) {
-    
+
     name = "16f877";
     fprintf(stderr,"WARNING: No Pic has been selected, defaulting to %s\n",name);
   }
-  
+
   fprintf (of, "\tlist\tp=%s\n",name);
   fprintf (of, "\tradix dec\n");
   fprintf (of, "\tinclude \"p%s.inc\"\n",name);
@@ -180,11 +213,11 @@ _hasNativeMulFor (iCode *ic, sym_link *left, sym_link *right)
   {
     return FALSE;
   }
-  
+
   /* multiply chars in-place */
   if (getSize(left) == 1 && getSize(right) == 1)
     return TRUE;
-  
+
   /* use library functions for more complex maths */
   return FALSE;
 }
@@ -219,67 +252,76 @@ oclsExpense (struct memmap *oclass)
 static void
 _pic14_do_link (void)
 {
-  hTab *linkValues = NULL;
-  char lfrm[256];
-  char *lcmd;
-  char temp[PATH_MAX];
-  set *tSet = NULL;
-  int ret;
-  char * procName;
-  
   /*
    * link command format:
    * {linker} {incdirs} {lflags} -o {outfile} {spec_ofiles} {ofiles} {libs}
    *
    */
-
-  sprintf (lfrm, "{linker} {incdirs} {sysincdirs} {lflags} -w -r -o \"{outfile}\" \"{user_ofile}\" {spec_ofiles} {ofiles} {libs}");
+#define LFRM  "{linker} {incdirs} {sysincdirs} {lflags} -w -r -o {outfile} {user_ofile} {spec_ofiles} {ofiles} {libs}"
+  hTab *linkValues = NULL;
+  char *lcmd;
+  set *tSet = NULL;
+  int ret;
+  char * procName;
 
   shash_add (&linkValues, "linker", "gplink");
 
   /* LIBRARY SEARCH DIRS */
   mergeSets (&tSet, libPathsSet);
   mergeSets (&tSet, libDirsSet);
-  shash_add (&linkValues, "incdirs", joinStrSet (appendStrSet (tSet, "-I\"", "\"")));
+  shash_add (&linkValues, "incdirs", joinStrSet (processStrSet (tSet, "-I", NULL, shell_escape)));
 
-  joinStrSet (appendStrSet (libDirsSet, "-I\"", "\""));
-  shash_add (&linkValues, "sysincdirs", joinStrSet (appendStrSet (libDirsSet, "-I\"", "\"")));
-  
+  joinStrSet (processStrSet (libDirsSet, "-I", NULL, shell_escape));
+  shash_add (&linkValues, "sysincdirs", joinStrSet (processStrSet (libDirsSet, "-I", NULL, shell_escape)));
+
   shash_add (&linkValues, "lflags", joinStrSet (linkOptionsSet));
 
-  shash_add (&linkValues, "outfile", fullDstFileName ? fullDstFileName : dstFileName);
+  {
+    char *s = shell_escape (fullDstFileName ? fullDstFileName : dstFileName);
+
+    shash_add (&linkValues, "outfile", s);
+    Safe_free (s);
+  }
 
   if (fullSrcFileName)
     {
-      SNPRINTF (temp, sizeof (temp), "%s.o", fullDstFileName ? fullDstFileName : dstFileName );
-      shash_add (&linkValues, "user_ofile", temp);
+      struct dbuf_s dbuf;
+      char *s;
+
+      dbuf_init (&dbuf, 128);
+
+      dbuf_append_str (&dbuf, fullDstFileName ? fullDstFileName : dstFileName);
+      dbuf_append (&dbuf, ".o", 2);
+      s = shell_escape (dbuf_c_str (&dbuf));
+      dbuf_destroy (&dbuf);
+      shash_add (&linkValues, "user_ofile", s);
+      Safe_free (s);
     }
 
-  shash_add (&linkValues, "ofiles", joinStrSet (appendStrSet (relFilesSet, "\"", "\"")));
+  shash_add (&linkValues, "ofiles", joinStrSet (processStrSet (relFilesSet, NULL, NULL, shell_escape)));
 
   /* LIBRARIES */
   procName = processor_base_name ();
   if (!procName)
+    procName = "16f877";
+
+  addSet (&libFilesSet, Safe_strdup (pic14_getPIC()->isEnhancedCore ?
+          "libsdcce.lib" : "libsdcc.lib"));
+
     {
-      procName = "16f877";
+      struct dbuf_s dbuf;
+
+      dbuf_init (&dbuf, 128);
+      dbuf_append (&dbuf, "pic", sizeof ("pic") - 1);
+      dbuf_append_str (&dbuf, procName);
+      dbuf_append (&dbuf, ".lib", sizeof (".lib") - 1);
+      addSet (&libFilesSet, dbuf_detach_c_str (&dbuf));
     }
 
-  if (pic14_getPIC()->isEnhancedCore)
-    {
-      addSet (&libFilesSet, Safe_strdup ("libsdcce.lib"));
-    }
-  else
-    {
-      addSet (&libFilesSet, Safe_strdup ("libsdcc.lib"));
-    }
-  SNPRINTF (temp, sizeof (temp), "pic%s.lib", procName);
-  addSet (&libFilesSet, Safe_strdup (temp));
-  shash_add (&linkValues, "libs", joinStrSet (appendStrSet (libFilesSet, "\"", "\"")));
+  shash_add (&linkValues, "libs", joinStrSet (processStrSet (libFilesSet, NULL, NULL, shell_escape)));
 
-  lcmd = msprintf(linkValues, lfrm);
-
+  lcmd = msprintf(linkValues, LFRM);
   ret = sdcc_system (lcmd);
-
   Safe_free (lcmd);
 
   if (ret)
@@ -303,8 +345,8 @@ PORT pic_port =
   {
     _asmCmd,
     NULL,
-    "-g",	    /* options with --debug */
-    NULL,	    /* options without --debug */
+    "-g",           /* options with --debug */
+    NULL,           /* options without --debug */
     //"-plosgffc",  /* Options with debug */
     //"-plosgff",   /* Options without debug */
     0,
@@ -344,13 +386,15 @@ PORT pic_port =
     "GSINIT  (CODE)",
     "udata_ovr",
     "GSFINAL (CODE)",
-    "HOME	 (CODE)",
+    "HOME        (CODE)",
     NULL, // xidata
     NULL, // xinit
     "CONST   (CODE)",   // const_name - const data (code or not)
     "CABS    (ABS,CODE)", // cabs_name - const absolute data (code or not)
     "XABS    (ABS,XDATA)",  // xabs_name - absolute xdata
     "IABS    (ABS,DATA)", // iabs_name - absolute data
+    NULL,                       // name of segment for initialized variables
+    NULL,                       // name of segment for copies of initialized variables in code space
     NULL,
     NULL,
     1        // code is read only
@@ -413,6 +457,7 @@ PORT pic_port =
   GPOINTER,     /* treat unqualified pointers as "generic" pointers */
   1,            /* reset labelKey to 1 */
   1,            /* globals & local static allowed */
+  0,            /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
   PORT_MAGIC
 };
 

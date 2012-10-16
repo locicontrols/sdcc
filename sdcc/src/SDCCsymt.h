@@ -1,24 +1,21 @@
 /*-------------------------------------------------------------------------
-   SDCCsymt.h - Header file for Symbols table related structures and MACRO's.
-   Written By -  Sandeep Dutta . sandeep.dutta@usa.net (1998)
+  SDCCsymt.h - Header file for Symbols table related structures and MACRO's.
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any
-   later version.
+  Copyright (C) 1998 Sandeep Dutta . sandeep.dutta@usa.net
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 2, or (at your option) any
+  later version.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-   In other words, you are welcome to use, share and improve this program.
-   You are forbidden to forbid anyone else to use, share and improve
-   what you give them.   Help stamp out software-hoarding!
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 -------------------------------------------------------------------------*/
 
 #ifndef  SDCCSYMT_H
@@ -239,9 +236,9 @@ typedef enum
 
 typedef struct sym_link
 {
-  SYM_LINK_CLASS xclass;            /* DECLARATOR or SPECIFIER    */
-  unsigned tdef:1;                  /* current link created by    */
-  /* typedef if this flag is set */
+  SYM_LINK_CLASS xclass;            /* DECLARATOR or SPECIFIER     */
+  unsigned tdef:1;                  /* current link created by     */
+                                    /* typedef if this flag is set */
   union
   {
     specifier s;                    /* if CLASS == SPECIFIER      */
@@ -346,7 +343,7 @@ typedef struct symbol
   short nRegs;                      /* number of registers required */
   short regType;                    /* type of register required    */
 
-  struct reg_info *regs[4];         /* can have at the most 4 registers */
+  struct reg_info *regs[8];         /* can have at the most 8 registers */
   struct asmop *aop;                /* asmoperand for this symbol */
   struct iCode *fuse;               /* furthest use */
   struct iCode *rematiCode;         /* rematerialise with which instruction */
@@ -359,7 +356,7 @@ typedef struct symbol
     struct set *itmpStack;          /* symbols spilt @ this stack location */
   }
   usl;
-  char bitVar;                      /* if bitVar != 0: this is a bit variable, bitVar is the size in bits */
+  signed char bitVar;               /* if bitVar != 0: this is a bit variable, bitVar is the size in bits */
   char bitUnnamed:1;                /* unnamed bit variable */
   unsigned offset;                  /* offset from top if struct */
 
@@ -530,23 +527,23 @@ extern sym_link *validateLink (sym_link * l,
 #define IS_CHAR(x)       (IS_SPEC(x) && x->select.s.noun == V_CHAR)
 #define IS_EXTERN(x)     (IS_SPEC(x) && x->select.s.b_extern)
 #define IS_VOLATILE(x)   (isVolatile (x))
-#define IS_INTEGRAL(x)   (IS_SPEC(x) && (x->select.s.noun == V_INT ||  \
-                                         x->select.s.noun == V_BOOL || \
-                                         x->select.s.noun == V_CHAR || \
-                                         x->select.s.noun == V_BITFIELD || \
+#define IS_INTEGRAL(x)   (IS_SPEC(x) && (x->select.s.noun == V_INT       || \
+                                         x->select.s.noun == V_BOOL      || \
+                                         x->select.s.noun == V_CHAR      || \
+                                         x->select.s.noun == V_BITFIELD  || \
                                          x->select.s.noun == V_BBITFIELD || \
-                                         x->select.s.noun == V_BIT ||  \
+                                         x->select.s.noun == V_BIT       || \
                                          x->select.s.noun == V_SBIT ))
-#define IS_BITFIELD(x)   (IS_SPEC(x) && (x->select.s.noun == V_BITFIELD || \
+#define IS_BITFIELD(x)   (IS_SPEC(x) && (x->select.s.noun == V_BITFIELD  || \
                                          x->select.s.noun == V_BBITFIELD ))
-#define IS_BITVAR(x)     (IS_SPEC(x) && (x->select.s.noun == V_BITFIELD || \
+#define IS_BITVAR(x)     (IS_SPEC(x) && (x->select.s.noun == V_BITFIELD  || \
                                          x->select.s.noun == V_BBITFIELD || \
-                                         x->select.s.noun == V_BIT || \
+                                         x->select.s.noun == V_BIT       || \
                                          x->select.s.noun == V_SBIT ))
-#define IS_BIT(x)        (IS_SPEC(x) && (x->select.s.noun  == V_BIT ||   \
+#define IS_BIT(x)        (IS_SPEC(x) && (x->select.s.noun == V_BIT       || \
                                          x->select.s.noun == V_SBIT ))
-#define IS_BOOLEAN(x)    (IS_SPEC(x) && (x->select.s.noun  == V_BIT ||   \
-                                         x->select.s.noun == V_SBIT ||   \
+#define IS_BOOLEAN(x)    (IS_SPEC(x) && (x->select.s.noun == V_BIT       || \
+                                         x->select.s.noun == V_SBIT      || \
                                          x->select.s.noun == V_BBITFIELD || \
                                          x->select.s.noun == V_BOOL ))
 #define IS_FLOAT(x)      (IS_SPEC(x) && x->select.s.noun == V_FLOAT)
@@ -620,7 +617,7 @@ extern sym_link *fixed16x16Type;
 typedef enum
 {
   RESULT_TYPE_NONE = 0,         /* operands will be promoted to int */
-  RESULT_TYPE_BIT,
+  RESULT_TYPE_BOOL,
   RESULT_TYPE_CHAR,
   RESULT_TYPE_INT,
   RESULT_TYPE_OTHER,            /* operands will be promoted to int */
@@ -663,6 +660,7 @@ sym_link *newBoolLink ();
 sym_link *newVoidLink ();
 int compareType (sym_link *, sym_link *);
 int compareTypeExact (sym_link *, sym_link *, int);
+int compareTypeInexact (sym_link *, sym_link *);
 int checkFunction (symbol *, symbol *);
 void cleanUpLevel (bucket **, int);
 void cleanUpBlock (bucket **, int);

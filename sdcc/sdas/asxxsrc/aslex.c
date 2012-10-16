@@ -1,20 +1,27 @@
-/* aslex.c
+/* aslex.c */
 
-   Copyright (C) 1989-1995 Alan R. Baldwin
-   721 Berkeley St., Kent, Ohio 44240
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 3, or (at your option) any
-later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+/*
+ *  Copyright (C) 1989-2010  Alan R. Baldwin
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ * Alan R. Baldwin
+ * 721 Berkeley St.
+ * Kent, Ohio  44240
+ *
+ */
 
 /*
  * 28-Oct-97 JLH bug in getst(): sign extend on ~(SPACE|ILL)
@@ -25,9 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>. */
  * Extensions: P. Felber, M. Hope
  */
 
-#include <stdio.h>
-#include <setjmp.h>
-#include <string.h>
 #include "dbuf_string.h"
 #include "asxxxx.h"
 
@@ -37,15 +41,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>. */
  *      analysis routines for the assembler.
  *
  *      aslex.c contains the following functions:
+ *              int     comma()
  *              char    endline()
- *              char    get()
+ *              int     get()
+ *              int     getdstr()
+ *              int     getdlm()
  *              VOID    getid()
- *              int     nxtline()
  *              int     getmap()
- *              char    getnb()
+ *              int     getnb()
+ *              int     getlnm()
  *              VOID    getst()
  *              int     more()
- *              VOID    unget(c)
+ *              int     nxtline()
+ *              VOID    unget()
  *
  *      aslex.c contains no local/static variables
  */
@@ -146,9 +154,10 @@ getid(char *id, int c)
  *                                      being processed.
  *
  *      called functions:
- *              char    get()           aslex.c
- *              char    getnb()         aslex.c
+ *              int     get()           aslex.c
+ *              int     getnb()         aslex.c
  *              VOID    unget()         aslex.c
+ *              VOID    qerr()          assubr.c
  *
  *      side effects:
  *              use of getnb(), get(), and unget() updates the
@@ -159,7 +168,7 @@ getid(char *id, int c)
 VOID
 getst(char *id, int c)
 {
-        register char *p;
+        char *p;
 
         if (c < 0) {
                 c = getnb();
@@ -175,7 +184,106 @@ getst(char *id, int c)
         *p++ = 0;
 }
 
-/*)Function     char    getnb()
+/*)Function     int     getdstr(str, slen)
+ *
+ *              char *  str             character array to return string in
+ *              int     slen            charater array length
+ *
+ *      The function getdstr() returns the character string
+ *      within delimiters.  If no delimiting character
+ *      is found a 'q' error is generated.
+ *
+ *      local variables:
+ *              int     c               current character from
+ *                                      assembler-source text line
+ *              int     d               the delimiting character
+ *
+ *      global variables:
+ *              none
+ *
+ *      called functions:
+ *              int     get()           aslex.c
+ *              int     getdlm()        aslex.c
+ *              VOID    qerr()          assubr.c
+ *
+ *      side effects:
+ *              Returns the character string delimited by the
+ *              character returned from getdlm().  SPACEs and
+ *              TABs before the delimited string are skipped.
+ *              A 'q' error is generated if no delimited string
+ *              is found or the input line terminates unexpectedly.
+ */
+
+VOID
+getdstr(str, slen)
+char * str;
+int slen;
+{
+        char *p;
+        int c, d;
+
+        d = getdlm();
+
+        p = str;
+        while ((c = get()) != d) {
+                if (c == '\0') {
+                        qerr();
+                }
+                if (p < &str[slen-1]) {
+                        *p++ = c;
+                } else {
+                        break;
+                }
+        }
+        *p = 0;
+}
+
+/*)Function     int     getdlm()
+ *
+ *      The function getdlm() returns the delimiter character
+ *      or if the end of the line is encountered a 'q' error
+ *      is generated.
+ *
+ *      local variables:
+ *              int     c               current character from
+ *                                      assembler-source text line
+ *
+ *      global variables:
+ *              none
+ *
+ *      called functions:
+ *              int     get()           aslex.c
+ *              int     getnb()         aslex.c
+ *              int     more()          aslex.c
+ *              VOID    qerr()          assubr.c
+ *
+ *      side effects:
+ *              scans ip to the first non 'SPACE' or 'TAB' character
+ *              and returns that character or the first character
+ *              following a ^ character as the delimiting character.
+ *              The end of the text line or the begining of a
+ *              comment returns causes a 'q' error.
+ */
+
+int
+getdlm()
+{
+        int c;
+
+        if (more()) {
+                if ((c = getnb()) == '^') {
+                        c = get();
+                }
+        } else {
+                c = '\0';
+        }
+        if (c == '\0') {
+                qerr();
+        }
+        return (c);
+}
+
+/*)Function     int     getnb()
  *
  *      The function getnb() scans the current assembler-source
  *      text line returning the first character not a SPACE or TAB.
@@ -188,7 +296,7 @@ getst(char *id, int c)
  *              none
  *
  *      called functions:
- *              char    get()           aslex.c
+ *              int     get()           aslex.c
  *
  *      side effects:
  *              use of get() updates the global pointer ip, the position
@@ -205,7 +313,7 @@ getnb(void)
         return (c);
 }
 
-/*)Function     char    get()
+/*)Function     int     get()
  *
  *      The function get() returns the next character in the
  *      assembler-source text line, at the end of the line a
@@ -297,7 +405,8 @@ unget(int c)
  *              none
  *
  *      called functions:
- *              char    get()           aslex.c
+ *              int     get()           aslex.c
+ *              VOID    qerr()          assubr.c
  *
  *      side effects:
  *              use of get() updates the global pointer ip the position
@@ -307,7 +416,7 @@ unget(int c)
 int
 getmap(int d)
 {
-        register int c, n, v;
+        int c, n, v;
 
         if ((c=get()) == '\0')
                 qerr();
@@ -353,6 +462,11 @@ getmap(int d)
                         }
                         unget(c);
                         c = v;
+                        break;
+
+                default:
+                        unget(c);
+                        c = '\\';
                         break;
                 }
         }
@@ -404,112 +518,322 @@ comma(int flag)
 /*)Function     int     nxtline()
  *
  *      The function nxtline() reads a line of assembler-source text
- *      from an assembly source text file or an include file.
+ *      from an assembly source text file, include file, or macro.
  *      Lines of text are processed from assembler-source files until
  *      all files have been read.  If an include file is opened then
  *      lines of text are read from the include file (or nested
  *      include file) until the end of the include file is found.
  *      The input text line is transferred into the global string
- *      ib[] and converted to a NULL terminated string.  The function
+ *      ib[] and converted to a NULL terminated string.  The string
+ *      is then copied into the global string ic[] which is used
+ *      for internal processing by the assembler.  The function
  *      nxtline() returns a (1) after succesfully reading
  *      a line, or a (0) if all files have been read.
  *
  *      local variables:
- *              int     i               string length
+ *              int     len             string length
+ *              struct asmf     *asmt   temporary pointer to the processing structure
  *
  *      global variables:
- *              char    ib[]            string buffer containing
- *                                      assembler-source text line
- *              char    ifp[]           array of file handles for
- *                                      include files
- *              int     incfil          index for ifp[] specifies
- *                                      active include file
- *              int     incline[]       array of include file
- *                                      line numbers
- *              char    sfp[]           array of file handles for
- *                                      assembler source files
- *              int     cfile           index for sfp[] specifies
- *                                      active source file
- *              int     srcline[]       array of source file
- *                                      line numbers
- *              int     inpfil          maximum input file index
+ *              char    afn[]           afile() constructed filespec
+ *              int     afp             afile constructed path length
+ *              asmf *  asmc            pointer to current assembler file structure
+ *              asmf *  asmi            pointer to a queued include file structure
+ *              asmf *  asmq            pointer to a queued macro structure
+ *              char *  ib              string buffer containing
+ *                                      assembler-source text line for processing
+ *              char *  ic              string buffer containing
+ *                                      assembler-source text line for listing
+ *              int     asmline         source file line number
+ *              int     incfil          current include file count
+ *              int     incline         include file line number
+ *              int     lnlist          LIST-NLIST state
+ *              int     mcrline         macro line number
+ *              int     srcline         current source line number
+ *              int     uflag           -u, disable .list/.nlist processing
  *
  *      called functions:
  *              int     dbuf_init()
  *              int     dbuf_set_length()
  *              int     dbuf_getline()
  *              const char * dbuf_c_str()
+ *              int     dbuf_append_str()
  *              int     fclose()        c-library
- *              char *  fgets()         c-library
- *              int     strlen()        c-library
+ *              char *  fgetm()         asmcro.c
+ *              char *  strcpy()        c_library
  *
  *      side effects:
  *              include file will be closed at detection of end of file.
  *              the next sequential source file may be selected.
- *              the global file indexes incfil or cfile may be changed.
- *              The respective source line or include line counter
- *              will be updated.
+ *              The current file specification afn[] and the path
+ *              length afp may be changed.
+ *              The respective line counter will be updated.
+ *
+ * --------------------------------------------------------------
+ *
+ * How the assembler sequences the command line assembler
+ * source files, include files, and macros is shown in a
+ * simplified manner in the following.
+ *
+ *      main[asmain] sequences the command line files by creating
+ *      a linked list of asmf structures, one for each file.
+ *
+ *      asmf structures:
+ *                   -------------       -------------               -------------
+ *                  | File 1      |     | File 2      |             | File N      |
+ *       ------     |       ------|     |       ------|             |       ------|      
+ *      | asmp | -->|      | next | --> |      | next | --> ... --> |      | NULL |
+ *       ------      -------------       -------------               -------------
+ *
+ *      At the beginning of each assembler pass set asmc = asmp
+ *      and process the files in sequence.
+ *
+ *      If the source file invokes the .include directive to process a
+ *      file then a new asmf structure is prepended to the asmc structure
+ *      currently being processed.  At the end of the include file the
+ *      processing resumes at the point the asmc structure was interrupted.
+ *      This is shown in the following:
+ *
+ *                   ------------- 
+ *                  | Incl File 1 |
+ *                  |       ------|
+ *                  |      | next |
+ *                   ------------- 
+ *                             |
+ *      asmf structures:       |
+ *                             V
+ *                   -------------       -------------               -------------
+ *                  | File 1      |     | File 2      |             | File N      |
+ *       ------     |       ------|     |       ------|             |       ------|      
+ *      | asmp | -->|      | next | --> |      | next | --> ... --> |      | NULL |
+ *       ------      -------------       -------------               -------------
+ *
+ *      At the .include point link the asmi structure to asmc
+ *      and then set asmc = asmi (the include file asmf structure).
+ *
+ *      If a source file invokes a macro then a new asmf structure is
+ *      prepended to the asmc structure currently being processed.  At the
+ *      end of the macro the processing resumes at the point the asmc
+ *      structure was interrupted.
+ *      This is shown in the following:
+ *
+ *                   -------------       -------------
+ *                  | Incl File 1 |     |    Macro    |
+ *                  |       ------|     |       ------|
+ *                  |      | next |     |      | next |
+ *                   -------------       -------------
+ *                             |                   |
+ *      asmf structures:       |                   |
+ *                             V                   V
+ *                   -------------       -------------               -------------
+ *                  | File 1      |     | File 2      |             | File N      |
+ *       ------     |       ------|     |       ------|             |       ------|      
+ *      | asmp | -->|      | next | --> |      | next | --> ... --> |      | NULL |
+ *       ------      -------------       -------------               -------------
+ *
+ *      At the macro point link the asmq structure to asmc
+ *      and then set asmc = asmq (the macro asmf structure).
+ *
+ *      Note that both include files and macros can be nested.
+ *      Macros may be invoked within include files and include
+ *      files can be invoked within macros.
+ *
+ *      Include files are opened, read, and closed on each pass
+ *      of the assembler.
+ *
+ *      Macros are recreated during each pass of the assembler.
  */
 
 int
 nxtline(void)
 {
-  static struct dbuf_s dbuf;
-  static char dbufInitialized = 0;
-  size_t len;
+        static struct dbuf_s dbuf_ib;
+        static struct dbuf_s dbuf_ic;
+        size_t len;
+        struct asmf *asmt;
 
-  if (!dbufInitialized)
-    {
-      dbuf_init (&dbuf, 1024);
-      dbufInitialized = 1;
-    }
-  else
-    dbuf_set_length (&dbuf, 0);
+        if (!dbuf_is_initialized (&dbuf_ib))
+                dbuf_init (&dbuf_ib, 1024);
+        if (!dbuf_is_initialized (&dbuf_ic))
+                dbuf_init (&dbuf_ic, 1024);
+        dbuf_set_length (&dbuf_ib, 0);
+        dbuf_set_length (&dbuf_ic, 0);
 
-loop:
-  if (incfil >= 0)
-    {
-      if ((len = dbuf_getline (&dbuf, ifp[incfil])) == 0)
-        {
-          fclose (ifp[incfil]);
-          ifp[incfil--] = NULL;
-          lop = NLPP;
-          goto loop;
-        }
-      else
-        {
-          ++incline[incfil];
-        }
-    }
-  else
-    {
-      if ((len = dbuf_getline (&dbuf, sfp[cfile])) == 0)
-        {
-          if (++cfile <= inpfil)
-            {
-              srcline[cfile] = 0;
-              goto loop;
-            }
-          return 0;
-        }
-      else
-        {
-          ++srcline[cfile];
-        }
-    }
-  ib = (char *)dbuf_c_str (&dbuf);
+loop:   if (asmc == NULL) return(0);
 
-  /* remove the trailing NL */
-  if (len > 0 && '\n' == ib[len - 1])
-    {
-      --len;
-      if (len > 0 && '\r' == ib[len - 1])
-        --len;
-      dbuf_set_length (&dbuf, len);
-      ib = (char *)dbuf_c_str (&dbuf);
-    }
+        /*
+         * Insert Include File
+         */
+        if (asmi != NULL) {
+                asmc = asmi;
+                asmi = NULL;
+                incline = 0;
+        }
+        /*
+         * Insert Queued Macro
+         */
+        if (asmq != NULL) {
+                asmc = asmq;
+                asmq = NULL;
+                mcrline = 0;
+        }
 
-  return 1;
+        switch(asmc->objtyp) {
+        case T_ASM:
+                if ((len = dbuf_getline (&dbuf_ib, asmc->fp)) == 0) {
+                        if ((asmc->flevel != flevel) || (asmc->tlevel != tlevel)) {
+                                err('i');
+                                fprintf(stderr, "?ASxxxx-Error-<i> at end of assembler file\n");
+                                fprintf(stderr, "              %s\n", geterr('i'));
+                        }
+                        flevel = asmc->flevel;
+                        tlevel = asmc->tlevel;
+                        lnlist = asmc->lnlist;
+                        asmc = asmc->next;
+                        if (asmc != NULL) {
+                                asmline = 0;
+                        }
+                        if ((lnlist & LIST_PAG) || (uflag == 1)) {
+                                lop = NLPP;
+                        }
+                        goto loop;
+                } else {
+                        if (asmline++ == 0) {
+                                strcpy(afn, asmc->afn);
+                                afp = asmc->afp;
+                        }
+                        srcline = asmline;
+                }
+                break;
+
+        case T_INCL:
+                if ((len = dbuf_getline (&dbuf_ib, asmc->fp)) == 0) {
+                        fclose(asmc->fp);
+                        incfil -= 1;
+                        if ((asmc->flevel != flevel) || (asmc->tlevel != tlevel)) {
+                                err('i');
+                                fprintf(stderr, "?ASxxxx-Error-<i> at end of include file\n");
+                                fprintf(stderr, "              %s\n", geterr('i'));
+                        }
+                        srcline = asmc->line;
+                        flevel = asmc->flevel;
+                        tlevel = asmc->tlevel;
+                        lnlist = asmc->lnlist;
+                        asmc = asmc->next;
+                        switch (asmc->objtyp) {
+                        default:
+                        case T_ASM:     asmline = srcline;      break;
+                        case T_INCL:    incline = srcline;      break;
+                        case T_MACRO:   mcrline = srcline;      break;
+                        }
+                        /*
+                         * Scan for parent file
+                         */
+                        asmt = asmc;
+                        while (asmt != NULL) {
+                                if (asmt->objtyp != T_MACRO) {
+                                        strcpy(afn, asmt->afn);
+                                        afp = asmt->afp;
+                                        break;
+                                }
+                                asmt = asmt->next;
+                        }
+                        if ((lnlist & LIST_PAG) || (uflag == 1)) {
+                                lop = NLPP;
+                        }
+                        goto loop;
+                } else {
+                        if (incline++ == 0) {
+                                strcpy(afn, asmc->afn);
+                                afp = asmc->afp;
+                        }
+                        srcline = incline;
+                }
+                break;
+
+        case T_MACRO:
+                if (fgetm(ib, dbuf_ib.alloc, asmc->fp) == NULL) {
+                        mcrfil -= 1;
+                        srcline = asmc->line;
+                        flevel = asmc->flevel;
+                        tlevel = asmc->tlevel;
+                        lnlist = asmc->lnlist;
+                        asmc = asmc->next;
+                        switch (asmc->objtyp) {
+                        default:
+                        case T_ASM:     asmline = srcline;      break;
+                        case T_INCL:    incline = srcline;      break;
+                        case T_MACRO:   mcrline = srcline;      break;
+                        }
+                        goto loop;
+                } else {
+                        if (mcrline++ == 0) {
+                                ;
+                        }
+                        srcline = mcrline;
+                }
+                break;
+
+        default:
+                fprintf(stderr, "?ASxxxx-Internal-nxtline(objtyp)-Error.\n\n");
+                asexit(ER_FATAL);
+                break;
+        }
+        ib = (char *)dbuf_c_str (&dbuf_ib);
+
+        /* remove the trailing NL */
+        if (len > 0 && '\n' == ib[len - 1])
+          {
+            --len;
+            if (len > 0 && '\r' == ib[len - 1])
+              --len;
+            dbuf_set_length (&dbuf_ib, len);
+            ib = (char *)dbuf_c_str (&dbuf_ib);
+          }
+
+        dbuf_append_str (&dbuf_ic, ib);
+        ic = (char *)dbuf_c_str (&dbuf_ic);
+        return(1);
+}
+
+
+/*)Function:    int     getlnm()
+ *
+ *      The function getlnm() returns the line number of the
+ *      originating assembler or include file.
+ *
+ *      local variables:
+ *              struct asmf     *asmt   temporary pointer to the processing structure
+ *
+ *      global variables:
+ *              struct asmf     *asmc   pointer to the current input processing structure
+ *              int             asmline line number in current assembler file
+ *              int             line    line number
+ *
+ *      functions called:
+ *              none
+ *
+ *      side effects:
+ *              Sets line to the source file line number.
+ */
+
+int
+getlnm()
+{
+        struct asmf *asmt;
+
+        line = srcline;
+        if (asmc->objtyp == T_MACRO) {
+                asmt = asmc->next;
+                while (asmt != NULL) {
+                        switch (asmt->objtyp) {
+                        case T_ASM:     return(line = asmline);
+                        case T_INCL:    return(line = asmt->line);
+                        default:        asmt = asmt->next;              break;
+                        }
+                }
+        }
+        return(line);
 }
 
 /*)Function     int     more()
@@ -527,7 +851,7 @@ loop:
  *              none
  *
  *      called functions:
- *              char    getnb()         aslex.c
+ *              int     getnb()         aslex.c
  *              VOID    unget()         aslex.c
  *
  *      side effects:
@@ -538,7 +862,7 @@ loop:
 int
 more(void)
 {
-        register int c;
+        int c;
 
         c = getnb();
         unget(c);
@@ -560,7 +884,7 @@ more(void)
  *              none
  *
  *      called functions:
- *              char    getnb()         aslex.c
+ *              int     getnb()         aslex.c
  *
  *      side effects:
  *              use of getnb() updates the global pointer ip the
@@ -570,7 +894,7 @@ more(void)
 char
 endline(void)
 {
-        register int c;
+        int c;
 
         c = getnb();
         return( (c == '\0' || c == ';') ? 0 : c );

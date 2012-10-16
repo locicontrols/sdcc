@@ -10,10 +10,6 @@
   <body link="teal" vlink="#483d8b">
     <div align="left">
       <h1>SDCC - Small Device C Compiler</h1>
-      <p style="border: 2px solid black; color: blue">
-        The SDCC 3.1.0 release is dedicated to the memory of
-        Dennis M. Ritchie, father of the C programming language.
-      </p>
       <table bgcolor="white" border="0" cellpadding="2" cellspacing="1" width="100%">
         <tbody>
           <tr>
@@ -24,67 +20,83 @@
             <h2>What is SDCC?</h2>
 
             <p><b>SDCC</b> is a <b><i>retargettable, optimizing ANSI - C compiler suite</i></b> that
-              targets the <b><i>Intel 8051, Maxim 80DS390, Zilog Z80, Z180, Rabbit 2000</i></b>
-              and the <b><i>Motorola 68HC08</i></b> based MCUs. Work is in progress on supporting
-              the <b><i>Microchip PIC16</i></b>, <b><i>PIC18</i></b> and <b><i>gbz80</i></b> targets.
-              SDCC suite is a collection of several components derived from different sources with
-              different FOSS licenses..</p>
-            <p>Some of the features include:</p>
+              targets the <b><i>Intel MCS51 </i></b> based microprocessors <b><i>(8031, 8032, 8051, 8052, etc.)</i></b>,
+              <b><i>Maxim</i></b> (formerly <b><i>Dallas</i></b>) <b><i>DS80C390</i></b> variants,
+              <b><i>Freescale</i></b> (formerly <b><i>Motorola</i></b>) <b><i>HC08</i></b> based <b><i>(hc08, s08)</i></b> and
+              <b><i>Zilog Z80</i></b> based MCUs <b><i>(z80, z180, gbz80, Rabbit 2000/3000, Rabbit 3000A)</i></b>.
+              Work is in progress on supporting the <b><i>Microchip PIC16</i></b> and <b><i>PIC18</i></b>
+              targets. It can be retargeted for other microprocessors.</p>
+           <p>SDCC suite is a collection of several components derived from different sources with
+              different FOSS licenses. SDCC compiler suite include:</p>
             <ul>
-              <li>sdas and sdld, a retargettable assembler and linker, based on ASXXXX, is Free Open Source Software,
-                distributed under GNU General Public License (GPL).</li>
-              <li>extensive MCU specific language extensions, allowing effective use of the underlying hardware.</li>
-              <li>a host of standard optimizations such as <i>global sub expression
-                elimination, loop optimizations (loop invariant, strength reduction of induction
-                variables and loop reversing), constant folding </i>and<i> propagation,
-                copy propagation, dead code elimination and jump tables for 'switch' statements.</i></li>
-              <li>MCU specific optimizations, including a global register allocator.</li>
-              <li>adaptable MCU specific backend that should be well suited for other 8 bit MCUs</li>
-              <li>independent rule based peep hole optimizer.</li>
-              <li>a full range of data types: <b>char </b>(<i>8</i> bits, 1 byte), <b>short </b>(<i>16</i> bits, 2 bytes),
-                <b>int</b> (<i>16</i> bits, 2 bytes), <b>long</b> (<i>32</i> bit, 4 bytes) and <b>float</b> (<i>4</i> byte IEEE);<br />
-                very basic (no integer constants, multiplication, division, shifts or use as return value) support for
-                <b>long long</b> <i>64</i> bit, 8 bytes) data types for the z80, z180, Rabbit 2000 and gbz80 targets.</li>
-              <li>the ability to add inline assembler code anywhere in a function.</li>
-              <li>the ability to report on the complexity of a function to help decide what should be re-written in assembler.</li>
-              <li>a good selection of automated regression tests.</li>
+              <li><b>sdas</b> and <b>sdld</b>, a <i>retargettable assembler and linker</i>, based on <b>ASXXXX</b>, written by Alan Baldwin; (GPL).</li>
+              <li><b>sdcpp</b> <i>preprocessor</i>, based on <b>GCC cpp</b>; (GPL).</li>
+              <li><b>ucsim</b> <i>simulators</i>, originally written by Daniel Drotos; (GPL).</li>
+              <li><b>sdcdb</b> <i>source level debugger</i>, originally written by Sandeep Dutta; (GPL).</li>
+              <li><b>sdbinutils</b> <i>library archive utilities</i>, including sdar, sdranlib and sdnm, derived from GNU Binutils; (GPL)</li>
+              <li><b>SDCC run-time libraries</b>; (GPL+LE). Pic device libraries and header files are derived from Microchip header (.inc) and linker script (.lkr) files. Microchip requires that "The header files should state that they are only to be used with authentic Microchip devices" which makes them incompatible with the GPL.</li>
+              <li><b>gcc-test</b> <i>regression tests</i>, derived from  <b>gcc-testsuite</b>; (no license explicitely specified, but since it is a part of GCC is probably GPL licensed)</li>
+              <li><b>packihx</b>; (public domain)</li>
+              <li><b>makebin</b>; (zlib/libpng License)</li>
+              <li><b>sdcc</b> <i>C compiler</i>, originally written by Sandeep Dutta; (GPL). Some of the features include:
+              <ul>
+                <li>extensive MCU specific language extensions, allowing effective use of the underlying hardware.</li>
+                <li>a host of standard optimizations such as <i>global sub expression
+                  elimination, loop optimizations (loop invariant, strength reduction of induction
+                  variables and loop reversing), constant folding </i>and<i> propagation,
+                  copy propagation, dead code elimination and jump tables for 'switch' statements.</i></li>
+                <li>MCU specific optimizations, including a global register allocator.</li>
+                <li>adaptable MCU specific backend that should be well suited for other 8 bit MCUs</li>
+                <li>independent rule based peep hole optimizer.</li>
+                <li>a full range of data types: <b>char</b> (<i>8</i> bits, 1 byte), <b>short</b> (<i>16</i> bits, 2 bytes),
+                  <b>int</b> (<i>16</i> bits, 2 bytes), <b>long</b> (<i>32</i> bit, 4 bytes), <b>float</b> (4 byte IEEE) and
+                  <b>_Bool</b>/<b>bool</b>;<br />
+                  basic (no integer constants) support for <b>long long</b> (<i>64</i> bit, 8 bytes) data types for the z80, z180,
+                  r2k, r3ka, gbz80, hc08 and s08 targets.</li>
+                <li>the ability to add inline assembler code anywhere in a function.</li>
+                <li>the ability to report on the complexity of a function to help decide what should be re-written in assembler.</li>
+                <li>a good selection of automated regression tests.</li>
+              </ul></li>
             </ul>
-            <p><b>SDCC</b> also comes with the <i>source level debugger</i> <b>sdcdb</b>,
-              using the current version of Daniel's s51 simulator.</p>
-            <p><b>SDCC</b> was written by Sandeep Dutta and released under a <b>GPL</b> license. Since its
-              initial release there have been numerous bug fixes and improvements. As
-              of December 1999, the code was moved to SourceForge where all the "users
+            <p><b>SDCC</b> was written by Sandeep Dutta and released under a <b>GPL</b> license.
+              Since its initial release there have been numerous bug fixes and improvements.
+              As of December 1999, the code was moved to SourceForge where all the "users
               turned developers" can access the same source tree. SDCC is constantly being
               updated with all the users' and developers' input.</p>
-            <p><b><i>AVR</i></b> target is no longer maintained.</p>
 
             <!-- START NEWS -->
             <h2><a name="News"></a>News</h2>
 
-            <p><i><b>November 27th, 2011: Small Device C Compiler 3.1.0 released.</b></i></p>
-            <p>A new release of SDCC, the portable optimizing compiler for 8051, DS390, Z80,
-              HC08, and PIC microprocessors is now available (<a href="http://sdcc.sourceforge.net"
-              target="_new">http://sdcc.sourceforge.net</a>). Sources, documentation and binaries
-              compiled for x86 Linux, x86 MS Windows and universal Mac OS X are available.</p>
-            <p>SDCC 3.1.0 Feature List:</p>
+            <p><i><b>July 9th, 2012: Small Device C Compiler 3.2.0 released.</b></i></p>
+            <p>A new release of SDCC, the portable optimizing compiler for 8051, DS390, Z80, Z180, Rabbit 2000, HC08 and PIC microprocessors
+              is now available (<a href="http://sdcc.sourceforge.net" target="_new">http://sdcc.sourceforge.net</a>). Sources, documentation
+              and binaries compiled for x86 Linux, x86 MS Windows and PPC Mac OS X are available. </p>
+            <p>SDCC 3.2.0 Feature List:</p>
             <ul>
-              <li>include/pic, non-free/include/pic, lib/pic, non-free/lib/pic renamed to */pic14</li>
-              <li>implemented --fomit-frame-pointer for mcs51</li>
-              <li>support for use of sdcc in z88dk (--reserve-regs-iy and --no-optsdcc-in-asm options; smallc calling convention)</li>
-              <li>new register allocator in the z80 and gbz80 ports (optimal when using --opt-code-size and a sufficiently high value for
-                --max-allocs-per-node for the z80 port)</li>
-              <li>C99 designated initializers</li>
-              <li>added strxfrm() and strcoll() functions; strerror() is the only string handling function still missing</li>
-              <li>added support for pic18f2xk22/pic18f4xk22 family (requires gputils > 0.14.0 and --enable-new-pics configure flag)</li>
-              <li>added support for enhanced core pic14 devices (requires gputils > 0.14.0 and --enable-new-pics configure flag)</li>
-              <li>setjmp() / longjmp() for the z80 port</li>
-              <li>_Bool / bool for the hc08, pic16 and pic14 ports</li>
-              <li>sdcpp synchronized with GNU cpp 4.6.1</li>
-              <li>z180 port</li>
-              <li>very basic (no integer constants, multiplication, division, shifts or use as return value) support for data types 
-                long long, unsigned long long, int_fast64_t, int_least64_t, int64_t, uint_fast64_t, uint_least64_t, uint64_t in the
-                z80, z180, r2k and gbz80 ports</li>
-              <li>r2k port for the Rabbit 2000 and Rabbit 3000</li>
+              <li>Named address spaces with optimal placement of bank selection calls.</li>
+              <li>_Noreturn.</li>
+              <li>--std-c11 command line option for ISO C11.</li>
+              <li>ucsim support for the LR35902 (gameboy CPU).</li>
+              <li>The gbz80 port is alive again, there were many bug fixes and the generated code is much better now.</li>
+              <li>Pic 14 enhanced core libraries are included in sdcc builds by default</li>
+              <li>Added pic 14 enhanced core devices: 16f1503, 16f1508, 16f1509, 16f1516, 16f1517, 16f1518, 16f1519, 16f1526, 16f1527, 16f1946,
+                16f1947</li>
+              <li>PIC14/PIC16: Implemented __critical; PIC14 __critical function cannot have arguments for now, though</li>
+              <li>inclusion of some tests from the gcc test suite into the sdcc regression test suite led to many bugs being found and fixed.</li>
+              <li>Many macros with previously non-standard-compliant names have been renamed (SDCC_REVISION to __SDCC_REVISION, etc).</li>
+              <li>setjmp() / longjmp() for the z180 and r2k ports.</li>
+              <li>Added sdar archive managing utility. sdar and sdranlib are derived from GNU binutils package</li>
+              <li>Added support for pic 14 core devices: 16f720, 16f721, 16f882, 16f883, 16f884, 16f747, 16f946</li>
+              <li>sdcpp synchronized with GNU cpp 4.6.3</li>
+              <li>Added support for pic 18f1230/18f1330 device family</li>
+              <li>Implemented #pragma config for pic16 target</li>
+              <li>sdcc now works on Debian GNU/Hurd.</li>
+              <li>New register allocator for the hc08 port, resulting in better code being generated.</li>
+              <li>New s08 port.</li>
+              <li>New r3ka port.</li>
+              <li>Many small improvements in the z80, hc08 and r2k code generation, reducing code size.</li>
+              <li>Shift, multiplication, division and returning of long long are now supported (modulo for long long is still missing, integer
+                literals of type long long are broken).
             </ul>
             <p>Numerous feature requests and bug fixes are included as well.</p>
             <p>You can download the release from:<br />
@@ -98,15 +110,23 @@
             <p><b>SDCC</b> compiles natively on <b>Linux</b> and <b>Mac OS X</b>
               using <a href="http://www.gnu.org">gcc</a>. <b>Windows</b> release and snapshot builds are made by
               <b>cross compiling to mingw32</b> on a Linux host.</p>
-            <p><b>Windows 9x/NT/2000/XP</b> users are
+            <p><b>Windows 9x/NT/2000/XP/Vista/7</b> users are
               recommended to use Cygwin (<a href="http://sources.redhat.com/cygwin/">http://sources.redhat.com/cygwin/</a>)
               or may try the unsupported Microsoft Visual C++ build scripts.</p>
 
             <h2><a name="Download"></a>Downloading SDCC</h2>
 
-            <p>See the <a href="http://sourceforge.net/project/showfiles.php?group_id=599">Sourceforge
-              download page</a> for the last released version including source and binary packages for <b>Linux - x86</b>,
-              <b>Microsoft Windows - x86</b> and <b>Mac OS X - ppc and i386</b>.</p>
+            <p>See the <a href="http://sourceforge.net/project/showfiles.php?group_id=599">
+              Sourceforge download page</a> for the last released version including source and
+              binary packages for <b>Linux - x86</b>, <b>Microsoft Windows - x86</b>
+              and <b>Mac OS X - ppc and i386</b>.</p>
+            <p>Major Linux distributions take care of SDCC installation packages themselves
+              and you will find SDCC in their repositories. Unfortunately SDCC packages included
+              in Linux disributions are often outdated. In this case users are encouraged to compile
+              the latest official SDCC release or a recent snapshot build by themselves or download
+              the pre-compiled binaries from
+              <a href="http://sourceforge.net/project/showfiles.php?group_id=599">
+              Sourceforge download page</a>.</p>
             <p>SDCC is known to compile from the source code also on the following platforms:</p>
             <ul>
               <li>Microsoft Windows - x86_64</li>
@@ -118,28 +138,19 @@
               <li>FreeBSD - i386</li>
               <li>SUN Solaris - i386</li>
               <li>SUN Solaris - Sparc</li>
+              <li>Rasbian (Debian for Raspberry Pi) - ARMv6</li>
             </ul>
             <p>SDCC is always under active development. Please consider
               <a href="snap.php">downloading one of the snapshot builds</a>
               if you have run across a bug, or if the above release is more than two months old.</p>
-            <p> Debian packages (many thanks to Aurelien Jarno &lt;aurel32.AT.debian.org&gt;):
-            </p>
-            <ul>
-              <li> <a href="http://packages.debian.org/sdcc">http://packages.debian.org/sdcc</a></li>
-              <li> <a href="http://ftp.debian.org/debian/pool/main/s/sdcc/">http://ftp.debian.org/debian/pool/main/s/sdcc/</a></li>
-            </ul>
-            <p>RPM packages (thanks to Mandrake, Conectiva and PLD Linux distributions):</p>
-            <ul>
-              <li> <a href="http://www.rpmseek.com/">http://www.rpmseek.com/</a></li>
-              <li> <a href="http://rpmfind.net/">http://rpmfind.net/</a></li>
-            </ul>
-            <p>The latest development source code can be accessed using Subversion. The following will fetch the latest sources:</p>
+            <p>The latest development source code can be accessed using Subversion. The following
+              will fetch the latest sources:</p>
             <p><code>svn co https://sdcc.svn.sourceforge.net/svnroot/sdcc/trunk/sdcc sdcc</code></p>
             <p>... will create the <i>sdcc</i> directory in your current directory and place all
               downloaded code there. You can browse the Subversion repository
-              <a href="https://sdcc.svn.sourceforge.net/svnroot/sdcc/trunk/sdcc/">here</a>.</p>
+              <a href="http://sdcc.svn.sourceforge.net/viewvc/sdcc/trunk/sdcc/">here</a>.</p>
             <p>SourceForge has further documentation on accessing the Subversion repository
-              <a href="http://sourceforge.net/docman/display_doc.php?docid=31070&amp;group_id=1">here</a>.</p>
+              <a href="https://sourceforge.net/scm/?type=svn&amp;group_id=599">here</a>.</p>
             <p>Before reporting a bug, please check your SDCC version and build
               date using the -v option, and be sure to include the full version string in your bug report. For example:</p>
             <p><code>sdcc/bin &gt; sdcc -v<br />
@@ -160,32 +171,37 @@
               <li>Provide an exact copy of any error message or incorrect output.</li>
             </ol>
             <p><b>Please attempt to include these 4 important parts</b>,
-              as applicable, in all requests for support or when reporting any problems or bugs with SDCC. Though
-              this will make your message lengthy, it will greatly improve your chance that SDCC users
-              and developers will be able to help you. Some SDCC developers are frustrated by bug reports
-              without code provided that they can use to reproduce and ultimately fix the problem,
-              so please be sure to provide sample code if you are reporting a bug!</p>
+              as applicable, in all requests for support or when reporting any problems or bugs
+              with SDCC. Though this will make your message lengthy, it will greatly improve your
+              chance that SDCC users and developers will be able to help you. Some SDCC developers
+              are frustrated by bug reports without code provided that they can use to reproduce
+              and ultimately fix the problem, so please be sure to provide sample code if you are
+              reporting a bug!</p>
             <ul>
               <li><a href="http://sdcc.sourceforge.net">Web Page</a> - you are (X) here.</li>
               <li>Mailing list: [use "BUG REPORTING" below if you believe you have found a bug.]
                 <ul>
-                  <li>Send to the developer list &lt;sdcc-devel.AT.lists.sourceforge.net&gt; - for development work on SDCC</li>
-                  <li>Send to the user list &lt;sdcc-user.AT.lists.sourceforge.net&gt; - [preferred] all developers and all users.</li>
-                  <li><a href="http://lists.sourceforge.net/mailman/listinfo/sdcc-user">Subscribe to the user list</a></li>
+                  <li>Send to the developer list &lt;sdcc-devel.AT.lists.sourceforge.net&gt; -
+                    for development work on SDCC</li>
+                  <li>Send to the user list &lt;sdcc-user.AT.lists.sourceforge.net&gt; -
+                    [preferred] all developers and all users.</li>
+                  <li><a href="http://lists.sourceforge.net/mailman/listinfo/sdcc-user">
+                    Subscribe to the user list</a></li>
                 </ul>
               </li>
-              <li><a href="http://sourceforge.net/bugs/?func=addbug&amp;group_id=599">Bug
-                Reporting</a> - if you have a problem using SDCC, we need to
+              <li><a href="http://sourceforge.net/bugs/?func=addbug&amp;group_id=599">
+                Bug Reporting</a> - if you have a problem using SDCC, we need to
                 hear about it. Please attach <b>code to reproduce the problem</b>,
                 and be sure to provide your email address so a developer can contact
                 you if they need more information to investigate and fix the bug.</li>
-              <li><a href="http://sourceforge.net/tracker/?func=add&amp;group_id=599&amp;atid=536150">Website/Documentation
-                Issues</a> - Please report erroneous, missing or outdated information</li>
-              <li><a href="https://sourceforge.net/forum/forum.php?forum_id=1864&amp;et=0">SDCC
-                Message Forum</a> - an account on Sourceforge is needed if you're going to post and reply. Short
-                easy online fill-in the blanks.</li>
-              <li><a href="http://sdccokr.dl9sec.de/">Open Knowledge Web Site</a> - Run by Thorsten Godau
-                &lt;thorsten.godau.AT.gmx.de&gt;</li>
+              <li><a href="http://sourceforge.net/tracker/?func=add&amp;group_id=599&amp;atid=536150">
+                Website/Documentation Issues</a> - Please report erroneous, missing or outdated
+                information</li>
+              <li><a href="https://sourceforge.net/projects/sdcc/forums/forum/1864">
+                SDCC Message Forum</a> - an account on Sourceforge is needed if you're going to
+                post and reply. Short easy online fill-in the blanks.</li>
+              <li><a href="http://sdccokr.dl9sec.de/">Open Knowledge Web Site</a> -
+                Run by Thorsten Godau &lt;thorsten.godau.AT.gmx.de&gt;</li>
             </ul>
 
             <h2><a name="Who"></a>Who is SDCC?</h2>
@@ -234,25 +250,31 @@
             </ul>
 
             <!-- START PAST_NEWS -->
-            <h2>Past news</h2>
 
-            <p><i><b>November 22nd, 2011: SDCC 3.1.0 RC3 released.</b></i></p>
-            <p>SDCC 3.1.0 Release Candidate 3 source, doc and binary packages for x86 Linux,
-              32 bit Windows and universal Mac OS X are available at:
-              <a href="http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc3/">
-                http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc3</a>.</p>
+            <h2><a name="Past_news"></a>Past news</h2>
+            <p><i><b>July 6th, 2012: SDCC 3.2.0 RC4 released.</b></i></p>
+            <p>SDCC 3.2.0 Release Candidate 4 source, doc and binary packages for x86 Linux,
+              32 bit Windows and universal Mac OS X are available in corresponding folders at:
+              <a href="http://sourceforge.net/projects/sdcc/files/">
+              http://sourceforge.net/projects/sdcc/files/</a>.</p>
 
-            <p><i><b>November 18th, 2011: SDCC 3.1.0 RC2 released.</b></i></p>
-            <p>SDCC 3.1.0 Release Candidate 2 source, doc and binary packages for x86 Linux,
-              32 bit Windows and universal Mac OS X are available at:
-              <a href="http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc2/">
-                http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc2</a>.</p>
+            <p><i><b>June 29th, 2012: SDCC 3.2.0 RC3 released.</b></i></p>
+            <p>SDCC 3.2.0 Release Candidate 3 source, doc and binary packages for x86 Linux,
+              32 bit Windows and universal Mac OS X are available in corresponding folders at:
+              <a href="http://sourceforge.net/projects/sdcc/files/">
+              http://sourceforge.net/projects/sdcc/files/</a>.</p>
 
-            <p><i><b>November 6th, 2011: SDCC 3.1.0 RC1 released.</b></i></p>
-            <p>SDCC 3.1.0 Release Candidate 1 source, doc and binary packages for x86 Linux,
-              32 bit Windows and universal Mac OS X are available at:
-              <a href="http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc1/">
-                http://sourceforge.net/projects/sdcc/files/snapshot_builds/sdcc-3.1.0-rc1</a>.</p>
+            <p><i><b>June 24th, 2012: SDCC 3.2.0 RC2 released.</b></i></p>
+            <p>SDCC 3.2.0 Release Candidate 2 source, doc and binary packages for x86 Linux,
+              32 bit Windows and universal Mac OS X are available in corresponding folders at:
+              <a href="http://sourceforge.net/projects/sdcc/files/">
+              http://sourceforge.net/projects/sdcc/files/</a>.</p>
+
+            <p><i><b>June 16th, 2012: SDCC 3.2.0 RC1 released.</b></i></p>
+            <p>SDCC 3.2.0 Release Candidate 1 source, doc and binary packages for x86 Linux,
+              32 bit Windows and universal Mac OS X are available in corresponding folders at:
+              <a href="http://sourceforge.net/projects/sdcc/files/">
+              http://sourceforge.net/projects/sdcc/files/</a>.</p>
             <!-- END PAST_NEWS -->
 
             <p><a href="previous.php">Previous News</a></p>

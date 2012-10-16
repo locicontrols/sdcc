@@ -13,13 +13,14 @@ RMDIR = @RMDIR@
 CPPFLAGS = -I$(srcdir)/../../../../include/pic14 -I$(srcdir)/../../../../non-free/include/pic14
 
 # add new pics source files here
-NEW_PICS_yes = \
-    pic16f720.c \
-    pic16f721.c \
+NEW_PICS_yes =
 
 PIC14_ENHANCED = \
+    pic12f1501.c \
+    pic12lf1552.c \
     pic12f1822.c \
     pic12f1840.c \
+    pic16f1454.c \
     pic16f1455.c \
     pic16f1458.c \
     pic16f1459.c \
@@ -27,6 +28,8 @@ PIC14_ENHANCED = \
     pic16f1507.c \
     pic16f1508.c \
     pic16f1509.c \
+    pic16f1512.c \
+    pic16f1513.c \
     pic16f1516.c \
     pic16f1517.c \
     pic16f1518.c \
@@ -35,6 +38,9 @@ PIC14_ENHANCED = \
     pic16f1527.c \
     pic16f1782.c \
     pic16f1783.c \
+    pic16f1784.c \
+    pic16f1786.c \
+    pic16f1787.c \
     pic16f1823.c \
     pic16f1824.c \
     pic16f1825.c \
@@ -58,10 +64,16 @@ PIC14_ENHANCED = \
     pic16lf1907.c
 
 C_SRC = \
+    pic10f320.c \
+    pic10f322.c \
+    pic12f609.c \
+    pic12f615.c \
+    pic12f617.c \
     pic12f629.c \
     pic12f635.c \
     pic12f675.c \
     pic12f683.c \
+    pic12f752.c \
     pic16c432.c \
     pic16c433.c \
     pic16c554.c \
@@ -82,6 +94,8 @@ C_SRC = \
     pic16c715.c \
     pic16c717.c \
     pic16c72.c \
+    pic16f720.c \
+    pic16f721.c \
     pic16c73b.c \
     pic16c745.c \
     pic16c74b.c \
@@ -94,27 +108,39 @@ C_SRC = \
     pic16c782.c \
     pic16c925.c \
     pic16c926.c \
+    pic16f610.c \
     pic16f616.c \
     pic16f627.c \
     pic16f627a.c \
     pic16f628.c \
     pic16f628a.c \
+    pic16f631.c \
     pic16f630.c \
     pic16f636.c \
     pic16f639.c \
     pic16f648a.c \
     pic16f676.c \
+    pic16f677.c \
     pic16f684.c \
     pic16f685.c \
     pic16f687.c \
     pic16f688.c \
     pic16f689.c \
     pic16f690.c \
+    pic16f707.c \
     pic16f716.c \
+    pic16f722.c \
+    pic16f722a.c \
+    pic16f723.c \
+    pic16f723a.c \
+    pic16f724.c \
+    pic16f726.c \
+    pic16f727.c \
     pic16f72.c \
     pic16f73.c \
     pic16f737.c \
     pic16f74.c \
+    pic16f747.c \
     pic16f76.c \
     pic16f767.c \
     pic16f77.c \
@@ -137,12 +163,16 @@ C_SRC = \
     pic16f877.c \
     pic16f877a.c \
     pic16f88.c \
+    pic16f882.c \
+    pic16f883.c \
+    pic16f884.c \
     pic16f886.c \
     pic16f887.c \
     pic16f913.c \
     pic16f914.c \
     pic16f916.c \
     pic16f917.c \
+    pic16f946.c \
     pic16hv616.c \
     $(PIC14_ENHANCED) \
     $(NEW_PICS_@HAVE_NEW_PICS@)

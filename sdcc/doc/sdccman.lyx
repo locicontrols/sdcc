@@ -125,7 +125,7 @@ SDCC Compiler User Guide
 \begin_layout Date
 
 \size normal
-SDCC 3.1.5
+SDCC 3.2.1
 \size footnotesize
 
 \begin_inset Newline newline
@@ -206,13 +206,14 @@ status collapsed
 
 \end_inset
 
-, etc.), Dallas DS80C390 variants, Freescale (formerly Motorola) HC08 and
- Zilog Z80 based MCUs (z80, z180, gbz80, Rabbit 2000/3000
+, etc.), Dallas DS80C390 variants, Freescale (formerly Motorola) HC08 based
+ (hc08, s08) and Zilog Z80 based MCUs (z80, z180, gbz80, Rabbit 2000/3000,
+ Rabbit 3000A
 \begin_inset Index
 status collapsed
 
 \begin_layout Plain Layout
-Z80, Z180, GBZ80, Rabbit 2000/3000 CPU
+Z80, Z180, GBZ80, Rabbit 2000/3000, Rabbit 3000A CPU
 \end_layout
 
 \end_inset
@@ -253,7 +254,7 @@ rollers and underlying hardware effectively.
 Warning: Large parts of this manual apply to the mc51 port only
 \emph default
 .
- Further information on the z80, z180, r2k and gbz80 ports and standard
+ Further information on the z80, z180, r2k, r3ka and gbz80 ports and standard
  compliance can be found in the sdcc wiki 
 \begin_inset Flex URL
 status collapsed
@@ -633,7 +634,8 @@ long long
 status collapsed
 
 \begin_layout Plain Layout
-only supported in the z80, z180, r2k and gbz80 ports as of sdcc 3.1.0
+only supported in the hc08, s08, z80, z180, r2k, r3ka and gbz80 ports as
+ of sdcc 3.2.0
 \end_layout
 
 \end_inset
@@ -2436,6 +2438,21 @@ reference "sub:ANSI-Compliance"
 \end_layout
 
 \begin_layout Itemize
+in sdcc version 3.2.0 compiler macro definitions not starting with double
+ underscore characters are deprecated if --std-cXX command line option is
+ defined.
+ They will be oboleted (removed) in one of next sdcc releases.
+\end_layout
+
+\begin_layout Itemize
+in sdcc version 3.2.0 new compiler macros for processor definition were introduced
+ for pic14 and pic16 targets: -D__SDCC_PIC16XXXX and -D__SDCC_PIC18FXXX
+ respectively.
+ The pic16 macro definition -D__18fXXX is deprecated.
+ It will be obsoleted (removed) in one of next sdcc releases.
+\end_layout
+
+\begin_layout Itemize
 pragma config for pic16 target was introduced in version 3.2.0.
  See section 
 \begin_inset CommandInset ref
@@ -2869,7 +2886,7 @@ status collapsed
 
 \end_inset
 
--disable-gbz80-port Excludes the GameBoy gbz80 port
+-disable-z80-port Excludes the z80 port
 \end_layout
 
 \begin_layout List
@@ -2887,7 +2904,61 @@ status collapsed
 
 \end_inset
 
--disable-z80-port Excludes the z80 port
+-disable-z180-port Excludes the z180 port
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-disable-r2k-port Excludes the r2k port
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-disable-r3ka-port Excludes the r3ka port
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-disable-gbz80-port Excludes the GameBoy gbz80 port
 \end_layout
 
 \begin_layout List
@@ -2942,6 +3013,24 @@ status collapsed
 \end_inset
 
 -disable-hc08-port Excludes the HC08 port
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-disable-s08-port Excludes the S08 port
 \end_layout
 
 \begin_layout List
@@ -3068,7 +3157,7 @@ status collapsed
 \end_inset
 
 -enable-new-pics Enables support for PIC devices that are not supported
- by the current 0.14.1 release of gputils
+ by the current 0.14.2 release of gputils
 \end_layout
 
 \begin_layout List
@@ -10523,12 +10612,42 @@ status collapsed
 
 
 \series default
- Generate code for the Freescale/Motorola HC08
+ Generate code for the Freescale/Motorola HC08 (aks 68HC08) 
 \begin_inset Index
 status collapsed
 
 \begin_layout Plain Layout
 HC08
+\end_layout
+
+\end_inset
+
+ family of processors.
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+
+\series bold
+-ms08
+\begin_inset Index
+status collapsed
+
+\begin_layout Plain Layout
+-ms08
+\end_layout
+
+\end_inset
+
+
+\series default
+ Generate code for the Freescale/Motorola S08 (aks 68HCS08, HCS08, CS08)
+ 
+\begin_inset Index
+status collapsed
+
+\begin_layout Plain Layout
+S08
 \end_layout
 
 \end_inset
@@ -10611,6 +10730,25 @@ status collapsed
 
 \series default
  Generate code for the Rabbit 2000 / Rabbit 3000 family of processors.
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+
+\series bold
+-mr3ka
+\begin_inset Index
+status collapsed
+
+\begin_layout Plain Layout
+-mr3ka
+\end_layout
+
+\end_inset
+
+
+\series default
+ Generate code for the Rabbit 3000A family of processors.
 \end_layout
 
 \begin_layout List
@@ -12250,7 +12388,7 @@ HC08
 
 \end_inset
 
- processors)
+ and S08 processors)
 \end_layout
 
 \begin_layout List
@@ -15106,6 +15244,57 @@ status collapsed
 \end_inset
 
  Frame pointer will be omitted when the function uses no local variables.
+\end_layout
+
+\begin_layout List
+\labelwidthstring 00.00.0000
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-
+\series bold
+max-allocs-per-node
+\series default
+
+\begin_inset Index
+status open
+
+\begin_layout Plain Layout
+-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+/
+\end_layout
+
+\end_inset
+
+-max-allocs-per-node
+\end_layout
+
+\end_inset
+
+ Setting this to a high value will result in increased compilation time
+ and more optimized code being generated.
+ Setting it to lower valeus speed up compilation, but does not optimize
+ as much.
+ The default value is 3000.
+ This option currently only affects the hc08, s08, z80, z180, r2k, r3ka
+ and gbz80 ports.
 \end_layout
 
 \begin_layout Subsection
@@ -21459,7 +21648,7 @@ in/out
 \end_layout
 
 \begin_layout Subsection
-HC08 Storage Class
+HC08/S08 Storage Class
 \begin_inset Index
 status collapsed
 
@@ -21604,7 +21793,7 @@ Named address spaces
 SDCC supports named address spaces.
  See the Embedded C standard for more information on them.
  So far SDCC only supports them for bank-switching.
- You need to have a function that witches to the desired memory bank and
+ You need to have a function that switches to the desired memory bank and
  declare a corresponding named address space:
 \end_layout
 
@@ -42507,7 +42696,7 @@ __banked
 \emph default
 
 \begin_inset Index
-status open
+status collapsed
 
 \begin_layout Plain Layout
 banked
@@ -42644,7 +42833,7 @@ ftp://ftp.dalsemi.com/pub/tini/ds80c400/c_libraries/sdcc/index.html
 \end_layout
 
 \begin_layout Section
-The Z80, Z180, Rabbit 2000/3000 and GBZ80 ports
+The Z80, Z180, Rabbit 2000/3000, Rabbit 3000A and GBZ80 ports
 \end_layout
 
 \begin_layout Standard
@@ -42658,7 +42847,8 @@ Z80
 
 \end_inset
 
-, Z180, Rabbit 2000/3000 and the Nintendo GameBoy's Z80-like gbz80
+, Z180, Rabbit 2000/3000, Rabbit 3000A and LR35902, the Nintendo GameBoy's
+ Z80-like gbz80
 \begin_inset Index
 status collapsed
 
@@ -42669,7 +42859,7 @@ gbz80 (GameBoy Z80)
 \end_inset
 
 .
- The Z80 port is passed through the same 
+ These ports passed through the same 
 \emph on
 regressions tests
 \begin_inset Index
@@ -42728,8 +42918,26 @@ Z80!return value
  HLDE (four bytes).
 \end_layout
 
+\begin_layout Standard
+When enabling optimizations using --opt-code size and a sufficiently high
+ value for --max-allocs-per-node sdcc typically generates much better code
+ for these architectures than any other compiler.
+ A comparison of compilers for these architecture can be found at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://sourceforge.net/apps/trac/sdcc/wiki/z80%20code%20size
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
 \begin_layout Section
-The HC08 port
+The HC08 and S08 ports
 \end_layout
 
 \begin_layout Standard
@@ -42743,16 +42951,24 @@ HC08
 
 \end_inset
 
- family has been added in October 2003, and is still undergoing some basic
- development.
- The code generator is complete, but the register allocation is still quite
- unoptimized.
- Some of the SDCC's standard C library functions have embedded non-HC08
- inline assembly and so are not yet usable.
+ and S08 does not yet generated code as compact as that generated by some
+ non-free compilers.
+ A comparison of compilers for these architecture can be found at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://sourceforge.net/apps/trac/sdcc/wiki/hc08%20code%20size
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
-The HC08 port passes the regression test suite (see section 
+The HC08 and S08 ports pass the regression test suite (see section 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sec:Quality-control"
@@ -42816,7 +43032,11 @@ Currently supported devices include:
 \end_layout
 
 \begin_layout Standard
-12F: 629, 635, 675, 683
+10F: 320, 322
+\end_layout
+
+\begin_layout Standard
+12F: 609, 615, 617, 629, 635, 675, 683, 752, 1501
 \end_layout
 
 \begin_layout Standard
@@ -42845,17 +43065,18 @@ Currently supported devices include:
 \end_layout
 
 \begin_layout Standard
-16F: 616, 627, 627a, 628, 628a, 630, 636, 639, 648, 648a, 676, 684, 685,
- 687, 688, 689, 690
+16F: 610, 616, 627, 627a, 628, 628a, 630, 631, 636, 639, 648, 648a, 676,
+ 677,684, 685, 687, 688, 689, 690
 \end_layout
 
 \begin_layout Standard
-16F: 716, 72, 720, 721, 73, 737, 74, 747, 76, 767, 77, 777, 785
+16F: 707, 716, 72, 720, 721, 722, 722a, 723, 723a, 724, 726, 727, 73, 737,
+ 74, 747, 76, 767, 77, 777, 785
 \end_layout
 
 \begin_layout Standard
 16F: 818, 819, 84, 84a, 87, 870, 871, 872, 873, 873a, 874, 874a, 876, 876a,
- 877, 877a, 88, 886, 887
+ 877, 877a, 88, 882, 883, 884, 886, 887
 \end_layout
 
 \begin_layout Standard
@@ -42877,8 +43098,12 @@ Supported devices with enhanced cores:
 \end_layout
 
 \begin_layout Standard
-16F: 1455, 1458, 1459, 1503, 1507, 1508, 1509, 1516, 1517, 1518, 1519, 1526,
- 1527, 1782, 1783
+12LF: 1552
+\end_layout
+
+\begin_layout Standard
+16F: 1454, 1455, 1458, 1459, 1503, 1507, 1508, 1509, 1512, 1513, 1516, 1517,
+ 1518, 1519, 1526, 1527, 1782, 1783, 1784, 1786, 1787
 \end_layout
 
 \begin_layout Standard
@@ -46434,12 +46659,11 @@ Example:
 \end_layout
 
 \begin_layout LyX-Code
-#pragma configure CP0=OFF,OSCS=ON,OSC=LP,BOR=ON,BORV=25,WDT=ON,WDTPS=128,CCP2MUX
-=ON
+#pragma config CP0=OFF,OSCS=ON,OSC=LP,BOR=ON,BORV=25,WDT=ON,WDTPS=128,CCP2MUX=ON
 \end_layout
 
 \begin_layout LyX-Code
-#pragma configure STVR=ON 
+#pragma config STVR=ON 
 \end_layout
 
 \begin_layout Subsection
@@ -48275,7 +48499,32 @@ Configuration Bits
 \end_layout
 
 \begin_layout Standard
-Configuration bits (also known as fuses) can be configured using `
+Configuration bits (also known as fuses) can be configured using one of
+ two methods:
+\end_layout
+
+\begin_layout Itemize
+using #pragma config (see section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:PIC16_Pragmas"
+
+\end_inset
+
+), which is a preferred method for the new code.
+ Example:
+\end_layout
+
+\begin_layout LyX-Code
+#pragma config CP0=OFF,OSCS=ON,OSC=LP,BOR=ON,BORV=25,WDT=ON,WDTPS=128,CCP2MUX=ON
+\end_layout
+
+\begin_layout LyX-Code
+#pragma config STVR=ON
+\end_layout
+
+\begin_layout Itemize
+using `
 \family typewriter
 __code
 \family default
@@ -48284,6 +48533,7 @@ __code
 __at
 \family default
 ' modifiers.
+ This method is deprecated.
  Possible options should be ANDed and can be found in your processor header
  file.
  Example for PIC18F2550:
@@ -48323,6 +48573,18 @@ static __code char __at(__CONFIG2L) configword2l = [...];
 \end_inset
 
 //More configuration words
+\end_layout
+
+\begin_layout Standard
+Mixing both methods is not allowed and throws an error message 
+\begin_inset Quotes sld
+\end_inset
+
+mixing __CONFIG and CONFIG directives
+\begin_inset Quotes srd
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -49596,10 +49858,20 @@ Extended Instruction Set
 \begin_layout Standard
 The PIC16 port emits code which is incompatible with the extended instruction
  set available with many newer devices.
- Make sure to always explicitly disable it, usually using
+ Make sure to always explicitly disable it, usually using:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+#pragma config XINST=OFF
 \end_layout
 
 \begin_layout Standard
+or deprecated:
+\end_layout
+
+\begin_layout Itemize
 
 \family typewriter
 static __code char __at(__CONFIG4L) conf4l = /* more flags & */ _XINST_OFF_4L;
@@ -67981,8 +68253,8 @@ This is an excerpt from an article published in Circuit Cellar Magazine
 August 2000
 \series default
 .
- It's a little outdated (the compiler is much more efficient now and user/develo
-per friendly), but pretty well exposes the guts of it all.
+ It's outdated (the compiler is much more efficient now and user/developer
+ friendly), but pretty well exposes the guts of it all.
 \shape default
 
 \begin_inset Newline newline

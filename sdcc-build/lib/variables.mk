@@ -50,8 +50,21 @@ SNAPSHOTDIR = $(HTDOCSDIR)/snapshots
 # Name of the machine used for fetching svn tree; empty for the local machine
 SVNSERVER =
 
-# Regression test targets
-CROSSREGTESTTARGETS = test-mcs51-small test-mcs51-large test-mcs51-stack-auto test-ds390 test-hc08 test-ucz80 test-ucz180 test-ucr2k test-ucgbz80
+# Regression test targets. To help reduce the load on the slower systems of the DCF, the
+# test targets are broken up into three categories:
+#  REGTESTTARGETS0: These will always be tested
+#  REGTESTTARGETS1: These will be tested on even days
+#  REGTESTTARGETS2: These will be tested on odd days
+REGTESTTARGETS0 = test-mcs51-small test-hc08 test-ds390
+REGTESTTARGETS1 = test-mcs51-large test-ucr3ka test-ucgbz80 test-ucz80
+REGTESTTARGETS2 = test-mcs51-stack-auto test-s08 test-ucr2k test-ucz180
+
+DAYODD = $(shell date +%j | awk '{print $$0%2}')
+ifeq ($(strip $(DAYODD)),0)
+CROSSREGTESTTARGETS = $(REGTESTTARGETS0) $(REGTESTTARGETS1)
+else
+CROSSREGTESTTARGETS = $(REGTESTTARGETS0) $(REGTESTTARGETS2)
+endif
 REGTESTTARGETS = test-host $(CROSSREGTESTTARGETS)
 # Directory for regression test log file
 REGTESTDIR = $(HTDOCSDIR)/regression_test_results/$(TARGET_PLATFORM)

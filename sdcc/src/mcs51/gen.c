@@ -66,11 +66,11 @@ static short rbank = -1;
 #define AOP_TYPE(op) AOP(op)->type
 #define AOP_SIZE(op) AOP(op)->size
 #define IS_AOP_PREG(x) (AOP(x) && (AOP_TYPE(x) == AOP_R1 || \
-                        AOP_TYPE(x) == AOP_R0))
+                                   AOP_TYPE(x) == AOP_R0))
 
 #define AOP_NEEDSACC(x) (AOP(x) && (AOP_TYPE(x) == AOP_CRY ||  \
-                         AOP_TYPE(x) == AOP_DPTR || \
-                         AOP(x)->paged))
+                                    AOP_TYPE(x) == AOP_DPTR || \
+                                    AOP(x)->paged))
 
 #define AOP_INPREG(x) (x && (x->type == AOP_REG &&                        \
                        (x->aopu.aop_reg[0] == REG_WITH_INDEX(R0_IDX) || \
@@ -324,6 +324,44 @@ popReg (int index, bool bits_popped)
   return bits_popped;
 }
 
+#if 0
+/*-----------------------------------------------------------------*/
+/* showR0R1status - helper for debugging getFreePtr failures       */
+/*-----------------------------------------------------------------*/
+static void
+showR0R1status(iCode * ic)
+{
+  bool r0iu, r1iu;
+  bool r0ou, r1ou;
+
+  r0iu = bitVectBitValue (ic->rUsed, R0_IDX);
+  r1iu = bitVectBitValue (ic->rUsed, R1_IDX);
+  printf ("ic->rUsed = [");
+  if (r0iu)
+    if (r1iu)
+      printf("r0,r1");
+    else
+      printf("r0");
+  else
+    if (r1iu)
+      printf("r1");
+  printf("] ");
+  
+  r0ou = bitVectBitValue (ic->rMask, R0_IDX);
+  r1ou = bitVectBitValue (ic->rMask, R1_IDX);
+  printf ("ic->rMask = [");
+  if (r0ou)
+    if (r1ou)
+      printf("r0,r1");
+    else
+      printf("r0");
+  else
+    if (r1ou)
+      printf("r1");
+  printf("]\n");
+}
+#endif
+
 /*-----------------------------------------------------------------*/
 /* getFreePtr - returns r0 or r1 whichever is free or can be pushed */
 /*-----------------------------------------------------------------*/
@@ -437,7 +475,7 @@ endOfWorld:
 
 
 /*-----------------------------------------------------------------*/
-/* getTempRegs - initialize an array of pointers to GPR registers */
+/* getTempRegs - initialize an array of pointers to GPR registers  */
 /*               that are not in use. Returns 1 if the requested   */
 /*               number of registers were available, 0 otherwise.  */
 /*-----------------------------------------------------------------*/
@@ -600,7 +638,7 @@ stackoffset (symbol * sym)
 /* aopPtrForSym - pointer for symbol                               */
 /*-----------------------------------------------------------------*/
 static void
-aopPtrForSym (symbol * sym, bool accuse, signed char offset, asmop * aop)
+aopPtrForSym (symbol * sym, bool accuse, int offset, asmop * aop, iCode * ic)
 {
   char *base;
   struct dbuf_s tmpBuf;
@@ -616,6 +654,9 @@ aopPtrForSym (symbol * sym, bool accuse, signed char offset, asmop * aop)
   base = dbuf_detach_c_str (&tmpBuf);
 
   offset += stackoffset (sym);
+
+  if (abs (offset) >= 248)
+    werrorfl (ic->filename, ic->lineno, W_LIT_OVERFLOW);
 
   if ((abs (offset) < 3) || (accuse && (abs (offset) < 4)))
     {
@@ -686,10 +727,12 @@ aopForSym (iCode * ic, symbol * sym, bool result)
          the pointer register */
       if (aop->type != AOP_STK)
         {
-          aopPtrForSym (sym, accuse, 0, aop);
+          aopPtrForSym (sym, accuse, 0, aop, ic);
         }
       else
-        aop->aopu.aop_sym = sym;
+        {
+          aop->aopu.aop_sym = sym;
+        }
       return aop;
     }
 
@@ -771,7 +814,9 @@ aopForRemat (symbol * sym)
           ic = OP_SYMBOL (IC_RIGHT (ic))->rematiCode;
         }
       else
-        break;
+        {
+          break;
+        }
     }
 
   dbuf_init (&dbuf, 128);
@@ -1067,6 +1112,8 @@ static void
 freeAsmop (operand * op, asmop * aaop, iCode * ic, bool pop)
 {
   asmop *aop;
+  int sz;
+  symbol *sym;
 
   if (!op)
     aop = aaop;
@@ -1120,15 +1167,14 @@ freeAsmop (operand * op, asmop * aaop, iCode * ic, bool pop)
       break;
 
     case AOP_STK:
-    {
-      int sz = aop->size;
-      symbol *sym = aop->aopu.aop_sym;
+      sz = aop->size;
+      sym = aop->aopu.aop_sym;
       bitVectUnSetBit (ic->rUsed, R0_IDX);
       bitVectUnSetBit (ic->rUsed, R1_IDX);
 
       getFreePtr (ic, aop, FALSE);
 
-      aopPtrForSym (sym, FALSE, aop->size - 1, aop);
+      aopPtrForSym (sym, FALSE, aop->size - 1, aop, ic);
 
       while (sz--)
         {
@@ -1153,8 +1199,7 @@ freeAsmop (operand * op, asmop * aaop, iCode * ic, bool pop)
           emitpop ("ar0");
           _G.r0Pushed--;
         }
-    }
-    break;
+	  break;
     }
 
 dealloc:
@@ -1177,7 +1222,7 @@ dealloc:
 /*                      pop r0 or r1 off stack if pushed            */
 /*------------------------------------------------------------------*/
 static void
-freeForBranchAsmop (operand * op)
+freeForBranchAsmop (operand * op, iCode * ic)
 {
   asmop *aop;
 
@@ -1221,7 +1266,7 @@ freeForBranchAsmop (operand * op)
       int sz = aop->size;
 
       emitcode ("mov", "b,r0");
-      aopPtrForSym (aop->aopu.aop_sym, FALSE, 0, aop);
+      aopPtrForSym (aop->aopu.aop_sym, FALSE, 0, aop, ic);
 
       while (sz--)
         {
@@ -1244,14 +1289,14 @@ freeForBranchAsmop (operand * op)
 /*                       just pop r0 or r1 off stack if pushed      */
 /*------------------------------------------------------------------*/
 static void
-freeForBranchAsmops (operand * op1, operand * op2, operand * op3)
+freeForBranchAsmops (operand * op1, operand * op2, operand * op3, iCode * ic)
 {
   if (op1)
-    freeForBranchAsmop (op1);
+    freeForBranchAsmop (op1, ic);
   if (op2)
-    freeForBranchAsmop (op2);
+    freeForBranchAsmop (op2, ic);
   if (op3)
-    freeForBranchAsmop (op3);
+    freeForBranchAsmop (op3, ic);
 }
 
 /*-----------------------------------------------------------------*/
@@ -1639,6 +1684,9 @@ aopPut (operand * result, const char *s, int offset)
           exit (EXIT_FAILURE);
         }
 
+      /* if not in accumulator */
+      MOVA (s);
+
       while (offset > aop->coff)
         {
           aop->coff++;
@@ -1652,9 +1700,6 @@ aopPut (operand * result, const char *s, int offset)
         }
 
       aop->coff = offset;
-
-      /* if not in accumulator */
-      MOVA (s);
 
       emitcode ("movx", "@dptr,a");
       break;
@@ -5768,7 +5813,7 @@ genModOneByte (operand * left, operand * right, operand * result)
   /* modulus: sign of the right operand has no influence on the result! */
   if (AOP_TYPE (right) == AOP_LIT)
     {
-      signed char val = (char) operandLitValue (right);
+      signed char val = (signed char) operandLitValue (right);
 
       if (!rUnsigned && val < 0)
         emitcode ("mov", "b,#0x%02x", -val);
@@ -5940,7 +5985,7 @@ genIfxJump (iCode * ic, const char *jval, operand * left, operand * right, opera
     emitcode (inst, "%s,!tlabel", jval, labelKey2num (tlbl->key));
   else
     emitcode (inst, "!tlabel", labelKey2num (tlbl->key));
-  freeForBranchAsmops (result, right, left);
+  freeForBranchAsmops (result, right, left, ic);
   emitcode ("ljmp", "!tlabel", labelKey2num (jlbl->key));
   emitLabel (tlbl);
 
@@ -6356,14 +6401,14 @@ genCmpEq (iCode * ic, iCode * ifx)
           if (IC_TRUE (ifx))
             {
               emitcode ("jnc", "!tlabel", labelKey2num (tlbl->key));
-              freeForBranchAsmops (result, right, left);
+              freeForBranchAsmops (result, right, left, ic);
               popForBranch (popIc, FALSE);
               emitcode ("ljmp", "!tlabel", labelKey2num (IC_TRUE (ifx)->key));
             }
           else
             {
               emitcode ("jc", "!tlabel", labelKey2num (tlbl->key));
-              freeForBranchAsmops (result, right, left);
+              freeForBranchAsmops (result, right, left, ic);
               popForBranch (popIc, FALSE);
               emitcode ("ljmp", "!tlabel", labelKey2num (IC_FALSE (ifx)->key));
             }
@@ -6375,7 +6420,7 @@ genCmpEq (iCode * ic, iCode * ifx)
           gencjneshort (left, right, tlbl);
           if (IC_TRUE (ifx))
             {
-              freeForBranchAsmops (result, right, left);
+              freeForBranchAsmops (result, right, left, ic);
               popForBranch (popIc, FALSE);
               emitcode ("ljmp", "!tlabel", labelKey2num (IC_TRUE (ifx)->key));
               emitLabel (tlbl);
@@ -6385,7 +6430,7 @@ genCmpEq (iCode * ic, iCode * ifx)
               symbol *lbl = newiTempLabel (NULL);
               emitcode ("sjmp", "!tlabel", labelKey2num (lbl->key));
               emitLabel (tlbl);
-              freeForBranchAsmops (result, right, left);
+              freeForBranchAsmops (result, right, left, ic);
               popForBranch (popIc, FALSE);
               emitcode ("ljmp", "!tlabel", labelKey2num (IC_FALSE (ifx)->key));
               emitLabel (lbl);
@@ -6657,14 +6702,14 @@ jmpTrueOrFalse (iCode * ic, symbol * tlbl, operand * left, operand * right, oper
       emitcode ("sjmp", "!tlabel", labelKey2num (nlbl->key));
       emitLabel (tlbl);
       popForBranch (popIc, FALSE);
-      freeForBranchAsmops (result, right, left);
+      freeForBranchAsmops (result, right, left, ic);
       emitcode ("ljmp", "!tlabel", labelKey2num (IC_TRUE (ic)->key));
       emitLabel (nlbl);
     }
   else
     {
       popForBranch (popIc, FALSE);
-      freeForBranchAsmops (result, right, left);
+      freeForBranchAsmops (result, right, left, ic);
       emitcode ("ljmp", "!tlabel", labelKey2num (IC_FALSE (ic)->key));
       emitLabel (tlbl);
     }
@@ -9351,6 +9396,8 @@ genRightShiftLiteral (operand * left, operand * right, operand * result, iCode *
   /* test the LEFT size !!! */
 
   /* I suppose that the left size >= result size */
+  wassert ((int)getSize (operandType (left)) >= size);
+
   if (shCount == 0)
     {
       size = getDataSize (result);
@@ -10027,8 +10074,6 @@ genPagedPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iC
 
   aopOp (left, ic, FALSE);
 
-  aopOp (result, ic, FALSE);
-
   /* if the value is already in a pointer register
      then don't need anything more */
   if (!AOP_INPREG (AOP (left)))
@@ -10040,11 +10085,17 @@ genPagedPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iC
       rname = preg->name;
     }
   else
-    rname = aopGet (left, 0, FALSE, FALSE);
+    {
+      rname = aopGet (left, 0, FALSE, FALSE);
+    }
+
+  aopOp (result, ic, TRUE);
 
   /* if bitfield then unpack the bits */
   if (IS_BITFIELD (retype))
-    ifxCond = genUnpackBits (result, rname, PPOINTER, ifx);
+    {
+      ifxCond = genUnpackBits (result, rname, PPOINTER, ifx);
+    }
   else
     {
       /* we have can just get the values */
@@ -10053,7 +10104,6 @@ genPagedPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iC
 
       while (size--)
         {
-
           emitcode ("movx", "a,@%s", rname);
           if (!ifx)
             aopPut (result, "a", offset);
@@ -10070,13 +10120,12 @@ genPagedPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iC
     {
       if (pi)
         aopPut (left, rname, 0);
-      freeAsmop (NULL, aop, ic, TRUE);
     }
   else
     {
       /* we did not allocate which means left
          already in a pointer register, then
-         if size > 0 && this could be used again
+         if size > 1 && this could be used again
          we have to point it back to where it
          belongs */
       if ((AOP_SIZE (result) > 1 && !OP_SYMBOL (left)->remat && (OP_SYMBOL (left)->liveTo > ic->seq || ic->depth)) && !pi)
@@ -10087,14 +10136,19 @@ genPagedPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iC
         }
     }
 
-  if (ifx && !ifx->generated)
-    {
-      genIfxJump (ifx, ifxCond, left, NULL, result, ic->next);
-    }
-
   /* done */
   freeAsmop (result, NULL, ic, TRUE);
+  if (aop)
+    {
+      freeAsmop (NULL, aop, ic, TRUE);
+    }
   freeAsmop (left, NULL, ic, TRUE);
+
+  if (ifx && !ifx->generated)
+    {
+      genIfxJump (ifx, ifxCond, NULL, NULL, NULL, ic->next);
+    }
+
   if (pi)
     pi->generated = 1;
 }
@@ -10827,7 +10881,7 @@ genPagedPointerSet (operand * right, operand * result, iCode * ic, iCode * pi)
     {
       /* we did not allocate which means left
          already in a pointer register, then
-         if size > 0 && this could be used again
+         if size > 1 && this could be used again
          we have to point it back to where it
          belongs */
       if (AOP_SIZE (right) > 1 && !OP_SYMBOL (result)->remat && (OP_SYMBOL (result)->liveTo > ic->seq || ic->depth) && !pi)
@@ -10847,7 +10901,7 @@ genPagedPointerSet (operand * right, operand * result, iCode * ic, iCode * pi)
 }
 
 /*-----------------------------------------------------------------*/
-/* genFarPointerSet - set value from far space                     */
+/* genFarPointerSet - set value in far space                       */
 /*-----------------------------------------------------------------*/
 static void
 genFarPointerSet (operand * right, operand * result, iCode * ic, iCode * pi)
@@ -10874,11 +10928,13 @@ genFarPointerSet (operand * right, operand * result, iCode * ic, iCode * pi)
 
       while (size--)
         {
-          MOVA (aopGet (right, offset++, FALSE, FALSE));
-          emitcode ("movx", "@dptr,a");
-          if (size || pi)
+          MOVA (aopGet (right, offset, FALSE, FALSE));
+          if (offset++ > 0)
             emitcode ("inc", "dptr");
+          emitcode ("movx", "@dptr,a");
         }
+      if (pi)
+        emitcode ("inc", "dptr");
     }
   if (pi && AOP_TYPE (result) != AOP_STR && AOP_TYPE (result) != AOP_IMMD)
     {
@@ -11396,7 +11452,7 @@ genCast (iCode * ic)
     }
 
   /* if the either is of type pointer */
-  if (IS_PTR (ctype) || IS_PTR (rtype))
+  if ((IS_PTR (ctype) || IS_PTR (rtype)) && !IS_INTEGRAL (rtype))
     {
       int p_type;
       sym_link *type = operandType (right);

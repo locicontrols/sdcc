@@ -1,3 +1,1938 @@
+2012-10-16 Borut Razem <borut.razem AT gmail.com>
+
+	* support/sdbinutils/opcodes/ia64-opc.h:
+	  fixed bug #3577586 - missing binutils headers on ia64
+
+2012-10-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* device/include/mcs51/lint.h:
+	  Fixed bug #3577318.
+
+2012-10-13 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as6808/m08mch.c,
+	* sdas/as6808/m08pst.c,
+	* sdas/as6808/m6808.h,
+	* sdas/as6808/Makefile.in,
+	* sdas/as8051/i51mch.c,
+	* sdas/as8051/i51pst.c,
+	* sdas/as8051/Makefile.in,
+	* sdas/asgb/gb.h,
+	* sdas/asgb/gbadr.c,
+	* sdas/asgb/gbmch.c,
+	* sdas/asgb/Makefile.in,
+	* sdas/asrab/Makefile.in,
+	* sdas/asrab/rab.h,
+	* sdas/asrab/rabadr.c,
+	* sdas/asrab/rabmch.c,
+	* sdas/asrab/rabpst.c,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asexpr.c,
+	* sdas/asxxsrc/aslex.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asxxxx.h,
+	* sdas/asz80/Makefile.in,
+	* sdas/asz80/z80.h,
+	* sdas/asz80/z80adr.c,
+	* sdas/asz80/z80mch.c,
+	* sdas/asz80/z80pst.c: added ASxxxx v5 macro support
+
+2012-10-13 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCtree_dec.hpp,
+	  src/SDCCralloc.hpp:
+	  Fixed bug #3566360.
+
+2012-10-08 Borut Razem <borut.razem AT gmail.com>
+
+	* support/sdbinutils/include/opcode/ia64.h: added since build
+	  on IA64 fails with elf64-ia64.c:27:25: error: opcode/ia64.h:
+	  No such file or directory
+
+2012-10-08 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/mcs51/gen.c (genPagedPointerGet): fixed bug #3527222
+	* support/regression/tests/gcc-torture-execute-921013-1.c: reenabled
+	* src/mcs51/gen.c (genCast),
+	* src/ds390/gen.c (genCast): fixed bug3467508 regression test failures
+	* support/regression/tests/bug3467508.c: reenabled for mcs51 and ds390
+
+2012-10-08 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asgb/asgb.vcxproj,
+	* sdas/asgb/asgb.vcxproj.filters,
+	* sdas/asgb/Makefile.in,
+	* sdas/asgb/gbext.c: removed gbext.c
+	* sdas/as8051/i51mch.c,
+	* sdas/as8051/i8051.h,
+	* sdas/asgb/gbadr.c,
+	* sdas/asgb/gbmch.c,
+	* sdas/asrab/rabadr.c,
+	* sdas/asz80/z80adr.c,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asout.c,
+	* sdas/asxxsrc/asxxxx.h: and yet another step towards ASxxxx v5
+
+2012-10-06 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as6808/m08pst.c,
+	* sdas/as8051/i51pst.c,
+	* sdas/asgb/gbpst.c,
+	* sdas/asrab/rabpst.c,
+	* sdas/asz80/z80pst.c,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asdbg.c,
+	* sdas/asxxsrc/aslex.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/assubr.c,
+	* sdas/asxxsrc/asxxxx.h: use ASxxxx v5 file structs
+
+2012-10-06 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/optimize_pic16devices.pl:
+	  updated with the latest version from Molnar Karoly
+	* support/scripts/pic14-header-parser.pl,
+	  support/scripts/pic16-header-parser.pl: applied patch #3567006 -
+	  New support/scripts/pic1[46]-header-parser.pl,
+	  thanks to Molnar Karoly
+
+2012-10-05 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/zip-pic16devices.pl,
+	  device/include/pic16/pic16devices.txt:
+	  applied patch #3574556 - Compressed pic16devices.txt file,
+	  thanks to Molnar Karoly
+	* support/scripts/optimize_pic16devices.pl:
+	  renamed from zip-pic16devices.pl
+	* support/scripts/inc2h-pic16.pl, support/scripts/inc2h.pl:
+	  removed, functionaly replaced by cinc2h.pl
+
+2012-10-03 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asdbg.c,
+	* sdas/asxxsrc/asexpr.c,
+	* sdas/asxxsrc/aslex.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asout.c,
+	* sdas/asxxsrc/asxxxx.h: another step to ASxxxx v5
+
+2012-10-03 Borut Razem <borut.razem AT gmail.com>
+
+	* device/non-free/lib/pic16/libdev/mkmk.sh: 
+	  applied patch #3574102 - Modification of device/non-free/lib/pic16/libdev/mkmk.sh
+
+2012-10-02 Borut Razem <borut.razem AT gmail.com>
+
+	* device/include/pic16/pic18fregs.h,
+	  device/include/pic16/pic16devices.txt,
+	  device/lib/pic16/libio/Makefile.am,
+	  device/lib/pic16/libio/adc.ignore,
+	  device/lib/pic16/libio/i2c.ignore,
+	  device/lib/pic16/libio/usart.ignore,
+	  device/lib/pic16/libio/Makefile.in,
+	  device/non-free/lib/pic16/libdev/Makefile.in,
+	  device/non-free/lib/pic16/libdev/Makefile.am,
+	  device/non-free/lib/pic16/pics.all,
+	  device/non-free/include/pic16pic18f13k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f13k22.c,
+	  device/non-free/include/pic16pic18f14k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f14k22.c,
+	  device/non-free/include/pic16pic18f24j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f24j11.c,
+	  device/non-free/include/pic16pic18f24k50.h,
+	  device/non-free/lib/pic16/libdev/pic18f24k50.c,
+	  device/non-free/include/pic16pic18f25j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f25j11.c,
+	  device/non-free/include/pic16pic18f25k50.h,
+	  device/non-free/lib/pic16/libdev/pic18f25k50.c,
+	  device/non-free/include/pic16pic18f25k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f25k80.c,
+	  device/non-free/include/pic16pic18f26j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f26j11.c,
+	  device/non-free/include/pic16pic18f26j13.h,
+	  device/non-free/lib/pic16/libdev/pic18f26j13.c,
+	  device/non-free/include/pic16pic18f26j53.h,
+	  device/non-free/lib/pic16/libdev/pic18f26j53.c,
+	  device/non-free/include/pic16pic18f26k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f26k80.c,
+	  device/non-free/include/pic16pic18f27j13.h,
+	  device/non-free/lib/pic16/libdev/pic18f27j13.c,
+	  device/non-free/include/pic16pic18f27j53.h,
+	  device/non-free/lib/pic16/libdev/pic18f27j53.c,
+	  device/non-free/include/pic16pic18f44j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f44j11.c,
+	  device/non-free/include/pic16pic18f45j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f45j11.c,
+	  device/non-free/include/pic16pic18f45k50.h,
+	  device/non-free/lib/pic16/libdev/pic18f45k50.c,
+	  device/non-free/include/pic16pic18f45k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f45k80.c,
+	  device/non-free/include/pic16pic18f46j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f46j11.c,
+	  device/non-free/include/pic16pic18f46j13.h,
+	  device/non-free/lib/pic16/libdev/pic18f46j13.c,
+	  device/non-free/include/pic16pic18f46j53.h,
+	  device/non-free/lib/pic16/libdev/pic18f46j53.c,
+	  device/non-free/include/pic16pic18f46k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f46k80.c,
+	  device/non-free/include/pic16pic18f47j13.h,
+	  device/non-free/lib/pic16/libdev/pic18f47j13.c,
+	  device/non-free/include/pic16pic18f47j53.h,
+	  device/non-free/lib/pic16/libdev/pic18f47j53.c,
+	  device/non-free/include/pic16pic18f63j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f63j11.c,
+	  device/non-free/include/pic16pic18f63j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f63j90.c,
+	  device/non-free/include/pic16pic18f64j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f64j11.c,
+	  device/non-free/include/pic16pic18f64j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f64j90.c,
+	  device/non-free/include/pic16pic18f65j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f65j10.c,
+	  device/non-free/include/pic16pic18f65j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f65j11.c,
+	  device/non-free/include/pic16pic18f65j15.h,
+	  device/non-free/lib/pic16/libdev/pic18f65j15.c,
+	  device/non-free/include/pic16pic18f65j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f65j90.c,
+	  device/non-free/include/pic16pic18f65k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f65k22.c,
+	  device/non-free/include/pic16pic18f65k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f65k80.c,
+	  device/non-free/include/pic16pic18f65k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f65k90.c,
+	  device/non-free/include/pic16pic18f66j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j10.c,
+	  device/non-free/include/pic16pic18f66j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j11.c,
+	  device/non-free/include/pic16pic18f66j15.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j15.c,
+	  device/non-free/include/pic16pic18f66j16.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j16.c,
+	  device/non-free/include/pic16pic18f66j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j90.c,
+	  device/non-free/include/pic16pic18f66j93.h,
+	  device/non-free/lib/pic16/libdev/pic18f66j93.c,
+	  device/non-free/include/pic16pic18f66k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f66k22.c,
+	  device/non-free/include/pic16pic18f66k80.h,
+	  device/non-free/lib/pic16/libdev/pic18f66k80.c,
+	  device/non-free/include/pic16pic18f66k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f66k90.c,
+	  device/non-free/include/pic16pic18f67j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f67j10.c,
+	  device/non-free/include/pic16pic18f67j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f67j11.c,
+	  device/non-free/include/pic16pic18f67j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f67j90.c,
+	  device/non-free/include/pic16pic18f67j93.h,
+	  device/non-free/lib/pic16/libdev/pic18f67j93.c,
+	  device/non-free/include/pic16pic18f67k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f67k22.c,
+	  device/non-free/include/pic16pic18f67k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f67k90.c,
+	  device/non-free/include/pic16pic18f83j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f83j11.c,
+	  device/non-free/include/pic16pic18f83j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f83j90.c,
+	  device/non-free/include/pic16pic18f84j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f84j11.c,
+	  device/non-free/include/pic16pic18f84j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f84j90.c,
+	  device/non-free/include/pic16pic18f85j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f85j10.c,
+	  device/non-free/include/pic16pic18f85j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f85j11.c,
+	  device/non-free/include/pic16pic18f85j15.h,
+	  device/non-free/lib/pic16/libdev/pic18f85j15.c,
+	  device/non-free/include/pic16pic18f85j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f85j90.c,
+	  device/non-free/include/pic16pic18f85k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f85k22.c,
+	  device/non-free/include/pic16pic18f85k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f85k90.c,
+	  device/non-free/include/pic16pic18f86j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j10.c,
+	  device/non-free/include/pic16pic18f86j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j11.c,
+	  device/non-free/include/pic16pic18f86j15.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j15.c,
+	  device/non-free/include/pic16pic18f86j16.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j16.c,
+	  device/non-free/include/pic16pic18f86j72.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j72.c,
+	  device/non-free/include/pic16pic18f86j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j90.c,
+	  device/non-free/include/pic16pic18f86j93.h,
+	  device/non-free/lib/pic16/libdev/pic18f86j93.c,
+	  device/non-free/include/pic16pic18f86k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f86k22.c,
+	  device/non-free/include/pic16pic18f86k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f86k90.c,
+	  device/non-free/include/pic16pic18f87j10.h,
+	  device/non-free/lib/pic16/libdev/pic18f87j10.c,
+	  device/non-free/include/pic16pic18f87j11.h,
+	  device/non-free/lib/pic16/libdev/pic18f87j11.c,
+	  device/non-free/include/pic16pic18f87j72.h,
+	  device/non-free/lib/pic16/libdev/pic18f87j72.c,
+	  device/non-free/include/pic16pic18f87j90.h,
+	  device/non-free/lib/pic16/libdev/pic18f87j90.c,
+	  device/non-free/include/pic16pic18f87j93.h,
+	  device/non-free/lib/pic16/libdev/pic18f87j93.c,
+	  device/non-free/include/pic16pic18f87k22.h,
+	  device/non-free/lib/pic16/libdev/pic18f87k22.c,
+	  device/non-free/include/pic16pic18f87k90.h,
+	  device/non-free/lib/pic16/libdev/pic18f87k90.c,
+	  device/non-free/include/pic16pic18f2439.h,
+	  device/non-free/lib/pic16/libdev/pic18f2439.c,
+	  device/non-free/include/pic16pic18f2458.h,
+	  device/non-free/lib/pic16/libdev/pic18f2458.c,
+	  device/non-free/include/pic16pic18f2539.h,
+	  device/non-free/lib/pic16/libdev/pic18f2539.c,
+	  device/non-free/include/pic16pic18f2553.h,
+	  device/non-free/lib/pic16/libdev/pic18f2553.c,
+	  device/non-free/include/pic16pic18f4439.h,
+	  device/non-free/lib/pic16/libdev/pic18f4439.c,
+	  device/non-free/include/pic16pic18f4458.h,
+	  device/non-free/lib/pic16/libdev/pic18f4458.c,
+	  device/non-free/include/pic16pic18f4539.h,
+	  device/non-free/lib/pic16/libdev/pic18f4539.c,
+	  device/non-free/include/pic16pic18f4553.h,
+	  device/non-free/lib/pic16/libdev/pic18f4553.c,
+	  device/non-free/include/pic16pic18f6310.h,
+	  device/non-free/lib/pic16/libdev/pic18f6310.c,
+	  device/non-free/include/pic16pic18f6390.h,
+	  device/non-free/lib/pic16/libdev/pic18f6390.c,
+	  device/non-free/include/pic16pic18f6393.h,
+	  device/non-free/lib/pic16/libdev/pic18f6393.c,
+	  device/non-free/include/pic16pic18f6410.h,
+	  device/non-free/lib/pic16/libdev/pic18f6410.c,
+	  device/non-free/include/pic16pic18f6490.h,
+	  device/non-free/lib/pic16/libdev/pic18f6490.c,
+	  device/non-free/include/pic16pic18f6493.h,
+	  device/non-free/lib/pic16/libdev/pic18f6493.c,
+	  device/non-free/include/pic16pic18f6525.h,
+	  device/non-free/lib/pic16/libdev/pic18f6525.c,
+	  device/non-free/include/pic16pic18f6621.h,
+	  device/non-free/lib/pic16/libdev/pic18f6621.c,
+	  device/non-free/include/pic16pic18f6628.h,
+	  device/non-free/lib/pic16/libdev/pic18f6628.c,
+	  device/non-free/include/pic16pic18f6723.h,
+	  device/non-free/lib/pic16/libdev/pic18f6723.c,
+	  device/non-free/include/pic16pic18f8310.h,
+	  device/non-free/lib/pic16/libdev/pic18f8310.c,
+	  device/non-free/include/pic16pic18f8390.h,
+	  device/non-free/lib/pic16/libdev/pic18f8390.c,
+	  device/non-free/include/pic16pic18f8393.h,
+	  device/non-free/lib/pic16/libdev/pic18f8393.c,
+	  device/non-free/include/pic16pic18f8410.h,
+	  device/non-free/lib/pic16/libdev/pic18f8410.c,
+	  device/non-free/include/pic16pic18f8490.h,
+	  device/non-free/lib/pic16/libdev/pic18f8490.c,
+	  device/non-free/include/pic16pic18f8493.h,
+	  device/non-free/lib/pic16/libdev/pic18f8493.c,
+	  device/non-free/include/pic16pic18f8525.h,
+	  device/non-free/lib/pic16/libdev/pic18f8525.c,
+	  device/non-free/include/pic16pic18f8621.h,
+	  device/non-free/lib/pic16/libdev/pic18f8621.c,
+	  device/non-free/include/pic16pic18f8628.h,
+	  device/non-free/lib/pic16/libdev/pic18f8628.c,
+	  device/non-free/include/pic16pic18f8723.h,
+	  device/non-free/lib/pic16/libdev/pic18f8723.c:
+	  applied patch #3573506 - Support of new PIC18Fxxx devices
+	  thanks to Molnar Karoly
+	* device/include/pic16/pic18fregs.h:
+	  applied patch #3573796 - Correction the bug of pic18fregs.h
+	  thanks to Molnar Karoly
+
+2012-09-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/hc08/main.c,
+	  src/ds390/main.c,
+	  src/z80/main.c,
+	  src/mcs51/main.c,
+	  src/pic14/main.c,
+	  src/pic16/main.c:
+	  A bit of consistency in port structure style.
+
+2012-10-01 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/cinc2h.pl:
+	  applied patch #3572693: Correction of cinc2h.pl
+	  thanks to Molnar Karoly
+	* device/non-free/include/pic14/*.h,
+	  device/non-free/lib/pic14/libdev/*.c,
+	  device/non-free/include/pic16/*.h,
+	  device/non-free/lib/pic16/libdev/*.c,
+	  device/lib/pic16/libio/usart/uopen.c: applied patch #3571327 -
+	  Regenerate the DEVICE.[ch] files with the cinc2h.pl program.
+	  thanks to Molnar Karoly
+
+2012-09-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* device/lib/r2k/crt0.s,
+	  device/lib/z180/crt0.s,
+	  device/lib/r3ka/crt0.s,
+	  device/lib/z80/crt0.s,
+	  device/lib/z80/crtcall.s,
+	  src/SDCCglue.c,
+	  src/port.h,
+	  src/SDCCmem.c,
+	  src/SDCCmem.h,
+	  src/hc08/main.c,
+	  src/ds390/main.c,
+	  src/z80/main.c,
+	  src/mcs51/main.c,
+	  src/pic14/main.c,
+	  src/pic16/main.c:
+	  Most of RFE #3565759.
+	* device/lib/r2k/Makefile.in,
+	  device/lib/z180/Makefile.in,
+	  device/lib/r3ka/Makefile.in,
+	  device/lib/z80/Makefile.in:
+	  Removed obsolete RLE initialization support.
+
+2012-09-25 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as6808/m08pst.c,
+	* sdas/as8051/i51pst.c,
+	* sdas/asgb/gbpst.c,
+	* sdas/asrab/rabpst.c,
+	* sdas/asz80/z80pst.c,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asxxxx.h: next step to ASxxxx v5
+
+2012-09-27 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/inc2h.pl, support/scripts/cinc2h.pl,
+	  support/scripts/inc2h-pic16.pl: fixed typo tbut
+
+2012-09-27 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* support/regression/tests/bug3467508.c:
+	  Regression test for bug #3467508.
+
+2012-09-26 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCast.c (decorateType): fixed bug #3467508
+
+2012-09-26 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/cinc2h.pl: added,
+	  thanks to Molnar Karoly
+
+2012-09-25 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asrab/rabbitext.c: removed
+	* sdas/asrab/rabbit.h,    sdas/asrab/rab.h,
+	* sdas/asrab/rabbitadr.c, sdas/asrab/rabadr.c,
+	* sdas/asrab/rabbitmch.c, sdas/asrab/rabmch.c,
+	* sdas/asrab/rabbitpst.c, sdas/asrab/rabpst.c: renamed
+	* sdas/asrab/asrab.vcxproj,
+	* sdas/asrab/asrab.vcxproj.filters,
+	* sdas/asrab/Makefile.in: updated
+	* sdas/as6808/m08pst.c,
+	* sdas/as8051/i51pst.c,
+	* sdas/asgb/gbpst.c,
+	* sdas/asrab/rabpst.c,
+	* sdas/asz80/z80pst.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asxxxx.h: next small steps towards ASxxxx v5
+
+2012-09-24 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCicode.c (geniCodePostInc/Dec, geniCodePreInc/Dec):
+	fixed bug #3511511
+	* support/regression/tests/gcc-tortute-execute-950426-1.c:
+	re-enabled
+
+2012-09-23 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asdbg.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/assym.c,
+	* sdas/asxxsrc/aslex.c,
+	* sdas/asxxsrc/assubr.c,
+	* sdas/asxxsrc/asxxxx.h: next small steps towards ASxxxx v5
+
+2012-09-19 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asz80/Makefile.in,
+	* sdas/asz80/as_z80.vcxproj,
+	* sdas/asz80/as_z80.vcxproj.filters,
+	* sdas/asz80/z80ext.c: removed z80ext.c
+	* sdas/as8051/i51mch.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asz80/z80.h,
+	* sdas/asz80/z80mch.c: small step towards ASxxxx v5
+
+2012-09-19 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/pic16/glue.c (pic16_initPointer): fixed pointer initialization
+	from address of struct/union
+
+2012-09-17 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asexpr.c,
+	* sdas/asxxsrc/aslist.c,
+	* sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asxxxx.h,
+	* sdas/linksrc/aslink.h,
+	* sdas/linksrc/lklist.c,
+	* src/hc08/main.c,
+	* src/mcs51/main.c,
+	* src/z80/main.c: again a small step towards ASxxxx v5
+
+2012-09-17 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/z80/ralloc2.cc (inst_sane): fixed bug #3558402
+
+2012-09-17 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* support/regression/tests/bug3564649.c:
+	  Disable test for host, since we cannot assume C11 support yet.
+
+2012-09-16 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* support/regression/tests/gcc-torture-execute-20030209-1.c:
+	  Reduced array size, reenabled test.
+	* support/regression/tests/gcc-torture-execute-991016-1.c:
+	  Enabled test for targets that support long long, since returning long long was implemented some time ago.
+
+2012-09-16 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCglue.c (emitRegularMap, printIvalType, printIvalBitFields),
+	* src/SDCCast.c (constExprValue): fixed bug #3560781 and related
+	* support/regression/tests/bug3564649.c: ensure noreturn function
+	  does not return
+
+2012-09-16 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  More efficient stack pointer restoration.
+	* support/regression/tests/bug3564649.c:
+	  Regression test for bug #3564649.
+
+2012-09-15 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* support/valdiag/tests/tentdecl.c,
+	* support/valdiag/tests/primtypes.c,
+	* support/valdiag/tests/constantRange.c,
+	* support/valdiag/tests/funcdec.c,
+	* support/valdiag/tests/overflow.c,
+	* support/valdiag/Makefile.in,
+	* support/valdiag/valdiag.py: update to work with current SDCC version
+
+2012-09-14 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCBBlock.c (iCode2eBBlock),
+	* src/SDCCcflow.c (eBBSuccessors): fixed bug #3564649
+
+2012-09-14 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as8051/i51mch.c,
+	* sdas/as8051/i8051.h,
+	* sdas/asxxsrc/asdata.c,
+	* sdas/asxxsrc/asxxxx.h: another small step towards ASxxxx v5
+
+2012-09-12 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sdas/asz80/z80.h, sdas/asz80/z80pst.c, sdas/asz80/z80mch.c,
+	* sdas/asz80/z80adr.c: added support for undocument z80 instructions
+
+2012-09-12 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCicode.h,
+	* src/SDCCicode.c (isOperandInBitSpace): new function
+	* src/mcs51/ralloc.c (packRegsForOneuse): fixed bug #3564969
+
+2012-09-11 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCsymt.c (computeType): fixed bug #3564104
+	* support/regression/tests/bug3564104.c: reenabled test
+
+2012-09-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fixed bug #3566191 by disabling register tracking for iy.
+	* src/z80/z80.h,
+	  src/z80/ralloc.c:
+	  Enabled rematerialization by register allocation for gbz80.
+
+2012-09-10 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* support/regression/tests/inline.c: added test for bug #3564755
+	* support/regression/tests/bug3565757.c: temporarily disabled bool
+	  in struct
+	* src/SDCCast.c: fixed bugs #3566114 and #3539508 
+
+2012-09-09 Borut Razem <borut.razem AT gmail.com>
+
+	* configure.in, configure, sdccconf_in.h:
+	  removed (commented out) avr and xa51 configuration options
+
+2012-09-09 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdas/as8051/Makefile.in,
+	* sdas/as8051/asx8051.vcxproj,
+	* sdas/as8051/asx8051.vcxproj.filters,
+	* sdas/as8051/i51ext.c: removed i51ext.c
+	* sdas/as6808/m08mch.c,   sdas/as6808/m08pst.c,
+	* sdas/as8051/i51mch.c,   sdas/as8051/i51pst.c,
+	* sdas/asgb/gbmch.c,      sdas/asgb/gbpst.c,
+	* sdas/asrab/rabbitmch.c, sdas/asrab/rabbitpst.c,
+	* sdas/asz80/z80mch.c,    sdas/asz80/z80pst.c,
+	* sdas/asxxsrc/asdata.c,  sdas/asxxsrc/asexpr.c,
+	* sdas/asxxsrc/aslist.c,  sdas/asxxsrc/asmain.c,
+	* sdas/asxxsrc/asout.c,   sdas/asxxsrc/asxxxx.h: small step towards ASxxxx v5
+	* src/mcs51/gen.c(freeAsmop): fix for MSVC
+	* src/SDCCsymt.c(typeFromStr): added 'C' for const
+	* src/z80/main.c(_z80_builtins): use 'C' to fix warnings
+
+2012-09-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/bug3565757.c:
+	  Fixed bug #3565757.
+
+2012-09-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/bug3559997.c:
+	  Fixed bug #3559997.
+
+2012-09-09 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCsymt.c (checkSClass),
+	* src/SDCCast.c (expandInlineFuncs): fixed bug #3564755
+
+2012-09-08 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCval.c (cheapestVal): fixed bug #3563977
+	* support/regression/tests/enum.c: tests added for bug #3563977
+
+2012-09-07 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCicode.c (operandOperation): fixed bug #3537139
+
+2012-09-06 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* sdas/linksrc/aslink.h,
+	* sdas/linksrc/lkarea.c,
+	* sdas/linksrc/lkelf.c,
+	* src/hc08/gen.c: Fixed bug #3536431
+
+2012-09-02 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  More verbose lospre debug output.
+	* support/regression/tests/bug3564104.c:
+	  Regression test for #3564104.
+
+2012-08-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c:
+	  Fix for handling of parameters in the z80-related ports.
+
+2012-08-27 Borut Razem <borut.razem AT gmail.com>
+
+	* src/ds390/gen.c:
+	  fixed muldiv regression test failures on ARM architecture
+
+2012-08-25 Borut Razem <borut.razem AT gmail.com>
+
+	* src/mcs51/gen.c:
+	  fixed muldiv regression test failures on ARM architecture
+
+2012-08-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/bug3561215.c:
+	  Fixed bug #3561215.
+
+2012-08-22 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/mcs51/gen.c: Reinserted break in proper context
+
+2012-08-21 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/mcs51/gen.c:
+	  Remove out-of-context break.
+
+2012-08-20 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/mcs51/gen.c (aopPtrForSym): added warning for memory space overflow,
+	  see bug 3509704
+	  (freeForBranchAsmop, freeForBranchAsmops): need extra ic parameter
+	  (aopPut, genFarPointerSet): partial fix for bug 3534523
+
+2012-08-17 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCCasm.c, SDCCsymt.h: fixed failing regression tests if
+	  sdcc compiled on ARM architecture where default "char" is "unsigned char"
+
+2012-08-13 Borut Razem <borut.razem AT gmail.com>
+
+	* support/regression/tests/bitvars.c,
+	  support/regression/tests/funsigned-char.c:
+	  fixed for gcc hosts with unsigned char (ARM architecture)
+
+2012-08-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve code generation for and with result in register and bit complement operand.
+
+2012-08-04 Borut Razem <borut.razem AT gmail.com>
+
+	* device/include/pic14/pic14devices.txt:
+	  applied patch minor-pic12lf1552-error.diff from
+	  #3553952 - "New devices to pic14 series and pic16fam-h-gen.pl update II."
+	  thanks to Molnar Karoly
+
+2012-08-03 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/pic16fam-h-gen.pl,
+	  device/include/pic14/pic14devices.txt,
+	  device/non-free/lib/pic14/libdev/devices.txt,
+	  device/non-free/lib/pic14/libdev/Makefile.in,
+	  device/non-free/include/pic14/pic16fam.h,
+	  doc/sdccman.lyx: updated,
+	  device/non-free/include/pic14/pic16f723a.h,
+	  device/non-free/include/pic14/pic16f1512.h,
+	  device/non-free/include/pic14/pic16f723.h,
+	  device/non-free/include/pic14/pic16f727.h,
+	  device/non-free/include/pic14/pic12f617.h,
+	  device/non-free/include/pic14/pic16f1513.h,
+	  device/non-free/include/pic14/pic12f609.h,
+	  device/non-free/include/pic14/pic16f724.h,
+	  device/non-free/include/pic14/pic16f707.h,
+	  device/non-free/include/pic14/pic12lf1552.h,
+	  device/non-free/include/pic14/pic16f610.h,
+	  device/non-free/include/pic14/pic16f631.h,
+	  device/non-free/include/pic14/pic16f677.h,
+	  device/non-free/include/pic14/pic16f722a.h,
+	  device/non-free/include/pic14/pic12f615.h,
+	  device/non-free/include/pic14/pic16f722.h,
+	  device/non-free/include/pic14/pic16f726.h,
+	  device/non-free/lib/pic14/libdev/pic16f723.c,
+	  device/non-free/lib/pic14/libdev/pic16f727.c,
+	  device/non-free/lib/pic14/libdev/pic12f617.c,
+	  device/non-free/lib/pic14/libdev/pic16f1513.c,
+	  device/non-free/lib/pic14/libdev/pic12f609.c,
+	  device/non-free/lib/pic14/libdev/pic16f724.c,
+	  device/non-free/lib/pic14/libdev/pic16f707.c,
+	  device/non-free/lib/pic14/libdev/pic12lf1552.c,
+	  device/non-free/lib/pic14/libdev/pic16f610.c,
+	  device/non-free/lib/pic14/libdev/pic16f631.c,
+	  device/non-free/lib/pic14/libdev/pic16f677.c,
+	  device/non-free/lib/pic14/libdev/pic16f722a.c,
+	  device/non-free/lib/pic14/libdev/pic12f615.c,
+	  device/non-free/lib/pic14/libdev/pic16f722.c,
+	  device/non-free/lib/pic14/libdev/pic16f726.c,
+	  device/non-free/lib/pic14/libdev/pic16f723a.c,
+	  device/non-free/lib/pic14/libdev/pic16f1512.c: added,
+	  applied patch #3553952 - "New devices to pic14 series and pic16fam-h-gen.pl update II."
+	  thanks to Molnar Karoly
+	* device/non-free/include/pic14/pic16f1516.h,
+	  device/non-free/include/pic14/pic16f1517.h,
+	  device/non-free/include/pic14/pic16f1518.h,
+	  device/non-free/include/pic14/pic16f1519.h:
+	  applied patch #3553938 - "pic16f151[6-9].h unnecessary ANSC[01] bits"
+	  thanks to Molnar Karoly
+
+2012-08-01 Borut Razem <borut.razem AT gmail.com>
+
+	* device/non-free/include/pic14/pic12f752.h,
+	  device/non-free/include/pic14/pic16f1784.h,
+	  device/non-free/include/pic14/pic10f322.h,
+	  device/non-free/include/pic14/pic16f1454.h,
+	  device/non-free/include/pic14/pic16f1786.h,
+	  device/non-free/include/pic14/pic12f1501.h,
+	  device/non-free/include/pic14/pic10f320.h,
+	  device/non-free/include/pic14/pic16f1787.h,
+	  device/non-free/lib/pic14/libdev/pic16f1787.c,
+	  device/non-free/lib/pic14/libdev/pic10f320.c,
+	  device/non-free/lib/pic14/libdev/pic16f1784.c,
+	  device/non-free/lib/pic14/libdev/pic12f752.c,
+	  device/non-free/lib/pic14/libdev/pic16f1454.c,
+	  device/non-free/lib/pic14/libdev/pic10f322.c,
+	  device/non-free/lib/pic14/libdev/pic16f1786.c,
+	  device/non-free/lib/pic14/libdev/pic12f1501.c,
+	  support/scripts/pic16fam-h-gen.pl,
+	  device/include/pic14/pic14devices.txt,
+	  device/non-free/include/pic14/pic16fam.h,
+	  device/non-free/lib/pic14/libdev/devices.txt,
+	  device/non-free/lib/pic14/libdev/Makefile.in,
+	  doc/sdccman.lyx:
+	  applied patch #3553108 - "New devices to pic14 series and pic16fam-h-gen.pl update",
+	  thanks to Molnar Karoly
+
+2012-08-01 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/z80.h,
+	  src/z80/ralloc2.cc,
+	  src/z80/main.c:
+	  Provide --fno-omit-frame-pointer option for not omitting frame pointer.
+
+2012-07-23 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCicode.c (geniCodeAdd): made fix for bug 3537338 endian
+	  agnostic
+
+2012-07-21 Borut Razem <borut.razem AT gmail.com>
+
+	* src/pic14/main.c: fixed bug
+	  #3546732 - "pic16f1507lib: No such file or directory"
+
+2012-07-21 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCCmem.c (allocGlobal, allocLocal): added check if bit space exists
+	* src/SDCCsymt.c (computeType): fixed bug 3531687
+	* src/SDCCast.c,
+	* src/SDCCicode.c,
+	* src/SDCCsymt.h: renamed RESULT_TYPE_BIT to RESULT_TYPE_BOOL
+	* support/regression/tests/bug3531687.c: reinserted char > bool test
+	* support/regression/tests/bug3537338.c: use _STATMEM for more coverage
+	* support/regression/tests/gcc-torture-execute-930513-1.c: modified to
+	  accept "<NO FLOAT>" and prevent buffer overrun
+
+2012-07-20 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCClospre.hpp (implement_lospre_assignment): explicitly ignore
+	  vertices created from newly split edges
+	* src/SDCCopt.c (eBBlockFromiCode): reenable lospre
+
+2012-07-19 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCCicode.c (geniCodeAdd): fixed bug 3537338
+	* src/ds390/gen.c (genMultOneByte): handle long result for pointer offsets
+	* src/mcs51/gen.c (genLeftShiftLiteral, genRightShiftLiteral),
+	* src/z80/gen.c (genLeftShiftLiteral): added wassert
+	* support/regression/tests/bug3537338.c: new, added
+
+2012-07-17 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCopt.c: temporarily disable lospre until I can figure out
+	  why it's failing on some hosts.
+
+2012-07-15 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdcc.sln: sdcdb depends on config
+	* all.vcxproj: excluded copy to bin\ from debug build as it seems to mess up
+	  the dependencies
+	* all.vcxproj.filters: added sdasrab.exe
+	* src/sdcc.vcxproj.filters,
+	* src/sdcc.vcxproj: removed SDCC.y dependency from lexing
+	  added version.h to Header Files
+	  added SDCClospre.cc and SDCClospre.hpp
+	* config.vcxproj,
+	* src/yacc.vcxproj: updated all custom build commands and dependencies
+	* src/SDCCast.c (decorateType, '='): fixed lost linenumber in bug 3540054
+	* src/SDCCsymt.c (dbuf_printTypeChain): removed 'd'
+	* sdas/asrab/rabbitmch.c (machine): removed const to fix prototype conflict
+	* src/SDCClospre.cc (lospre): fixed warning
+	* src/SDCCutil.h,
+	* src/SDCCutil.c (processStrSet): fix warning by using explicit function ptr
+
+2012-07-15 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCCmain.c, src/SDCCutil.c, src/SDCCutil.h, src/SDCCsystem.c,
+	  src/mcs51/main.c, src/ds390/main.c, src/z80/main.c, src/hc08/main.c,
+	  src/pic14/main.c, src/pic16/main.c, src/avr/main.c, src/xa51/main.c:
+	  properly quoted file names when transferred to preprocessor,
+	  assembler and linker
+	* support/scripts/repack_release.sh: added -pr to usage
+
+2012-07-12 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCCerr.c, src/SDCCerr.h, src/pic16/main.c, src/pic16/main.h,
+	  src/pic16/glue.c, src/pic16/device.h, src/SDCCast.c, src/SDCCast.h,
+	  doc/sdccman.lyx: properly fixed bug
+	  #3539804 - pragma config and certain string constants
+
+2012-07-11 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/repack_release.sh: implemented feature request
+	  #3472159 - sdcc-3.1.0.tar.bz2 will untar with name sdcc;
+	  the result will be seen at the next sdcc release 3.3.0
+
+2012-07-11 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/peeph-z80.def:
+	  Fixed comment.
+
+2012-07-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* Merged the lospre branch.
+
+2012-07-10 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  src/hc08/gen.c:
+	  Disable cost function debugging output.
+
+2012-07-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* Merged the smallopts branch.
+
+2012-07-09 Borut Razem <borut.razem AT gmail.com>
+
+	* Small Device C Compiler 3.2.0 released
+	* .version, doc/sdccman.lyx: changed sdcc version to 3.2.1
+
+2012-07-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c:
+	  Disable lospre for ports unrelated to z80 or hc08.
+
+2012-07-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Improve code generation for multiplication by literal.
+
+2012-07-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix bug in built-in strchr().
+	* device/lib/Makefile.in:
+	  Fix building of strcpy() for mcs51.
+
+2012-07-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix bug in stack restoration for built-in functions.
+	* device/lib/_strchr.c,
+	  device/lib/_strncpy.c:
+	  Fix conflict between built-in and non built-in functions.
+
+2012-07-07 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/repack_release.sh:
+	  updated, added -dl, -r and -ul command line options
+
+2012-07-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCmain.c,
+	  src/SDCClospre.cc,
+	  src/SDCCglobl.h:
+	  Provide option to allow unsafe reads in lospre.
+
+2012-07-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Safety in lospre.
+
+2012-07-06 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Preparations for safety in lospre.
+
+2012-07-06 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Preparations for safety.
+
+2012-07-06 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix for out-of-memory handling in lospre.
+
+2012-07-06 Borut Razem <borut.razem AT gmail.com>
+
+	* src/pic16/main.c: bug patched with sdcc-3.2.0-config_fix.diff
+	  #3539804 - #pragma config and certain string constants,
+	  thanks to Herbert Potzl
+
+2012-07-05 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.cc:
+	  Preparations for safety in lospre.
+
+2012-06-30 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/sdcc.nsi:
+	  fixed 'Installer suggest "C:\Program Files\SDCC" instead of
+	  "C:\Program Files (x86)\SDCC"' problem
+
+2012-07-04 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix for operand handling in built-in memset().
+	* src/SDCCopt.c:
+	  Convert zero-length built-in memcpy(), strncpy(), memset()
+	  back to ensure any volatiles are read. Fixes #3538725.
+
+2012-06-30 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c:
+	  Fix stack adjustment after call and omission of frame pointer for --reserve-regs-iy.
+
+2012-06-28 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* sdcc.sln,
+	* sdas/asrab/asrab.vcxproj: renamed output to sdasrab
+	* all.vcxproj: added sdasrab.exe and sdldrab.exe
+	* src/sdcc.vcxproj: removed parsing SDCC.y
+	* src/yacc.vcxproj: cosmetics
+	* sdas/as6808/m6808.h,
+	* sdas/as8051/i8051.h,
+	* sdas/asgb/gb.h,
+	* sdas/asrab/rabbit.h,
+	* sdas/asz80/z80.h: removed (conflicting) prototypes for machine and minit
+	* src/hc08/ralloc.c (packRegisters): fixed bug indicated by a warning
+	* src/pic14/gen.c (genDataPointerGet, genConstPointerGet),
+	* src/pic14/genarith.c (genAddLit),
+	* src/pic14/glue.c (pic14_constructAbsMap, emitInitVal)
+	* src/pic16/device.h (PIC16_device),
+	* src/pic16/gen.c (pic16_storeForReturn, genAnd, genXor, genAssign),
+	* src/pic16/glue.c (pic16_printIvalType, pic16_printIvalChar,
+	  pic16_printIvalBitFields, pic16_printIvalUnion),
+	* src/z80/ralloc2.cc (iy_reserved, Ainst_ok, omit_frame_ptr): fixed warnings
+
+2012-06-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c,
+	  src/z80/gen.c,
+	  src/z80/main.c,
+	  device/include/string.h:
+	  Built-in strncpy().
+
+2012-06-28 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCralloc.hpp,
+	  src/z80/ralloc2.cc,
+	  src/z80/gen.c,
+	  src/hc08/ralloc2.cc,
+	  device/include/string.h:
+	  Built-in strchr().
+	* src/z80/peep.c:
+	  Fix out-of-array read.
+
+2012-06-27 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCC.lex:
+	  unescape file names from preprocessor, 3rd try
+	* device/non-free/lib/pic16/libdev/Makefile.am,
+	  device/non-free/lib/pic16/libdev/Makefile.in,
+	  device/non-free/lib/pic14/libdev/Makefile.in:
+	  gputils supports all devices supported by SDCC
+
+2012-06-27 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/main.c,
+	  src/z80/gen.c:
+	  Built-in strcpy().
+
+2012-06-27 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* device/lib/z180/Makefile.in,
+	  device/lib/incl.mk,
+	  device/lib/r3ka/Makefile.in,
+	  device/lib/gbz80/Makefile.in,
+	  device/lib/s08/Makefile.in,
+	  device/lib/r2k/Makefile.in,
+	  device/lib/hc08/Makefile.in,
+	  device/lib/z180/strcpy.s
+	  device/lib/r3ka/strcpy.s
+	  device/lib/z80/strcpy.s
+	  device/lib/r2k/strcpy.s:
+	  Use ldi for strcpy().
+
+2012-06-27 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCC.lex:
+	  unescape file names from preprocessor, 2nd try
+
+2012-06-26 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCC.lex, src/SDCCerr.c, src/SDCCerr.h:
+	  unescape file names from preprocessor
+
+2012-06-26 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Use xor to zero the accumulator in a few more places.
+
+2012-06-26 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve memset() for small sizes, RFE #3537534.
+
+2012-06-26 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc:
+	  Improve handling of hl in additions with on-stack param operands.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* device/lib/z180/shift.s,
+	  device/lib/r3ka/shift.s,
+	  device/lib/z80/shift.s,
+	  device/lib/gbz80/shift.s,
+	  device/lib/r2k/shift.s,
+	  src/port.h,
+	  src/z80/gen.c,
+	  src/z80/main.c,
+	  device/lib/z180/Makefile.in,
+	  device/lib/z180/stubs.s,
+	  device/lib/r3ka/Makefile.in,
+	  device/lib/r3ka/stubs.s,
+	  device/lib/z80/Makefile.in,
+	  device/lib/z80/stubs.s,
+	  device/lib/gbz80/stubs.s,
+	  device/lib/gbz80/Makefile.in,
+	  device/lib/r2k/Makefile.in,
+	  device/lib/r2k/stubs.s:
+	  Code generation instead of support calls for all shifts.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Better cost estimation for loading parameters into pairs,
+	  more efficient loading from stack into iy for Rabbits.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Use dec r and inc a in comparison for equality.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  src/z80/ralloc2.cc:
+	  Use 16-bit sbc in subtraction and comparison.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve handling of pointers to long and long long.
+
+2012-06-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Minor addition improvement,
+	  refactoring of pair test code.
+
+2012-06-25 Borut Razem <borut.razem AT gmail.com>
+
+	* src/regression/Makefile:
+	  applied patch #3537593 - pic16 regression patch,
+	  thanks to Don Wooton
+
+2012-06-24 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/repack_release.sh: updated
+
+2012-06-24 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/mcs51/gen.c (genLeftShiftLiteral): commented out wassert to work
+	  around bug 3537338
+
+2012-06-21 Borut Razem <borut.razem AT gmail.com>
+
+	* device/non-free/lib/pic14/libdev/devices.txt,
+	  device/non-free/lib/pic14/libdev/Makefile.in,
+	  device/non-free/lib/pic14/libdev/pic16c782.c,
+	  device/non-free/lib/pic14/libdev/pic16f676.c,
+	  device/non-free/lib/pic14/libdev/pic16f1782.c,
+	  device/non-free/lib/pic14/libdev/pic16c770.c,
+	  device/non-free/lib/pic14/libdev/pic16f716.c,
+	  device/non-free/lib/pic14/libdev/pic16f1503.c,
+	  device/non-free/lib/pic14/libdev/pic16f1507.c,
+	  device/non-free/lib/pic14/libdev/pic16f1783.c,
+	  device/non-free/lib/pic14/libdev/pic16c771.c,
+	  device/non-free/lib/pic14/libdev/pic16c925.c,
+	  device/non-free/lib/pic14/libdev/pic16f1508.c,
+	  device/non-free/lib/pic14/libdev/pic16f1823.c,
+	  device/non-free/lib/pic14/libdev/pic16c432.c,
+	  device/non-free/lib/pic14/libdev/pic16c717.c,
+	  device/non-free/lib/pic14/libdev/pic16c781.c,
+	  device/non-free/lib/pic14/libdev/pic12f675.c,
+	  device/non-free/lib/pic14/libdev/pic16c926.c,
+	  device/non-free/lib/pic14/libdev/pic16f1509.c,
+	  device/non-free/lib/pic14/libdev/pic12f629.c,
+	  device/non-free/lib/pic14/libdev/pic16f684.c,
+	  device/non-free/lib/pic14/libdev/pic16f688.c,
+	  device/non-free/lib/pic14/libdev/pic16f630.c,
+	  device/non-free/lib/pic14/libdev/pic16f747.c,
+	  device/non-free/lib/pic14/libdev/pic16c946.c,
+	  device/non-free/include/pic14/pic16c782.h,
+	  device/non-free/include/pic14/pic16f676.h,
+	  device/non-free/include/pic14/pic16f1509.h,
+	  device/non-free/include/pic14/pic16c770.h,
+	  device/non-free/include/pic14/pic16f716.h,
+	  device/non-free/include/pic14/pic16f1782.h,
+	  device/non-free/include/pic14/pic16c771.h,
+	  device/non-free/include/pic14/pic16c925.h,
+	  device/non-free/include/pic14/pic16f1503.h,
+	  device/non-free/include/pic14/pic16f1507.h,
+	  device/non-free/include/pic14/pic16f1783.h,
+	  device/non-free/include/pic14/pic16c432.h,
+	  device/non-free/include/pic14/pic16c717.h,
+	  device/non-free/include/pic14/pic16c781.h,
+	  device/non-free/include/pic14/pic12f675.h,
+	  device/non-free/include/pic14/pic16c926.h,
+	  device/non-free/include/pic14/pic16f1508.h,
+	  device/non-free/include/pic14/pic16f1823.h,
+	  device/non-free/include/pic14/pic12f629.h,
+	  device/non-free/include/pic14/pic16f684.h,
+	  device/non-free/include/pic14/pic16f688.h,
+	  device/non-free/include/pic14/pic16f630.h:
+	  device/non-free/include/pic14/pic16f747.h:
+	  device/non-free/include/pic14/pic16c946.h:
+	  applied modified patch
+	  #3536909 - "Pic14 device and header upgrade.",
+	  thanks to Molnar Karoly
+	* support/scripts/inc2h.pl: applied modified patch
+	  #3536022 - "Error in the inc2h.pl program.",
+	  thanks to Molnar Karoly
+	* device/non-free/include/pic14/recreate.sh:
+	  generate NO_LEGACY_NAMES block if exists in the old version
+	* src/pic14/genarith.c: applied patch
+	  #3521376 - "pic14 incorrect asm op code",
+	  thanks to Raphael Neider
+
+2012-06-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCralloc.hpp,
+	  src/port.h,
+	  src/xa51/main.c,
+	  src/mcs51/main.c,
+	  src/ds390/main.c,
+	  src/pic14/main.c,
+	  src/pic16/main.c,
+	  src/z80/main.c,
+	  src/z80/ralloc2.cc,
+	  src/hc08/main.c,
+	  src/hc08/ralloc2.cc:
+	  Nice fix for bug #3536902.
+	* src/z80/gen.c:
+	  More efficient built-in memcpy() for small copies.
+
+2012-06-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCralloc.hpp,
+	  src/z80/ralloc2.c,
+	  src/z80/ralloc.h:
+	  Ugly hack to fix bug #3536902.
+
+2012-06-21 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sim/ucsim/z80.src/inst_r2k.cc:
+	  Fix flags for rl de, rr d, rr hl (merged by Philipp Klaus Krause from smallopts branch).
+
+2012-06-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix spilling of comitted pair after ex (sp), dd.
+
+2012-06-21 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/include/mcs51/cc2530.h: renamed TR0 to TESTREG0
+
+2012-06-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Use destructive increment in comparison for equality with #0xff,
+	  more efficient assignment of 16-byte values,
+	  fix spilling of comitted pair after ex (sp), dd.
+
+2012-06-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Enable use of rl de in destructive and.
+
+2012-06-20 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sim/ucsim/z80.src/inst_r2k.cc:
+	  Fix flags for rl de, rr d, rr hl.
+
+2012-06-20 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Improve destructive and.
+
+2012-06-19 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/peeph-z80.def,
+	  src/z80/peeph-r2k.def:
+	  Minor peephole fix.
+
+2012-06-19 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  More efficient assignment for global variables.
+
+2012-06-19 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix bug in & 0x8000 with ifx for unsigned int.
+
+2012-06-19 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Refactor code for setup for built-in memcpy(),
+	  use ex de, hl in register move,
+	  use cp instead of xor for clearing the carry flag.
+
+2012-06-18 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCopt.c,
+	  src/hc08/ralloc.c:
+	  Document relation between offsetFold() and packPointerOp().
+
+2012-06-18 Borut Razem <borut.razem AT gmail.com>
+
+	* doc/sdccman.lyx, device/include/pic14/pic14devices.txt,
+	  device/non-free/lib/pic14/libdev/devices.txt,
+	  device/non-free/lib/pic14/libdev/Makefile.in,
+	  device/non-free/include/pic14/pic16f883.h,
+	  device/non-free/include/pic14/pic16f884.h,
+	  device/non-free/include/pic14/pic16f882.h,
+	  device/non-free/lib/pic14/libdev/pic16f884.c,
+	  device/non-free/lib/pic14/libdev/pic16f882.c,
+	  device/non-free/lib/pic14/libdev/pic16f883.c:
+	  applied patch #3531530 - new CPU support (pic16f882, 883, 884),
+	  thanks to Molnar Karoly
+
+2012-06-18 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/peeph-z80.def,
+	  src/z80/peeph-r2k.def:
+	  Some more peepholes that help when framepointer is omitted.
+	* src/z80/peep.c:
+	  Handle cpl, ldir, di, ei, out, in, mul and bool in read analysis.
+
+2012-06-18 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c,
+	  src/z80/ralloc2.cc:
+	  Improve shifts by non-literal.
+
+2012-06-17 Borut Razem <borut.razem AT gmail.com>
+
+	* support/scripts/sdcc.nsi:
+	  added removal of include\asm\r3ka\*.h
+	* device/non-free/include/pic14/pic16fam.h,
+	  support/scripts/pic16fam-h-gen.pl:
+	  applied patch #3531531 - The pic16fam-h-gen correction,
+	  thanks to Molnar Karoly
+	* support/scripts/repack_release.sh:
+	  remove unneeded directories produced by sdbinutils
+
+2012-06-17 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCerr.h,
+	  src/SDCCerr.c,
+	  src/SDCCval.c:
+	  Warn when encountering long long literals.
+
+2012-06-17 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Improve destructive and.
+
+2012-06-16 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sdas/asz80/z80mch.c: Change to report error for invalid operands
+	  to z180 tst instruction.
+
+2012-06-09 Borut Razem <borut.razem AT gmail.com>
+
+	* .version, sdcc.spec, doc/sdccman.lyx:
+	  changed sdcc version to 3.2.0
+
+2012-06-16 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Implement #3512989.
+
+2012-06-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* support/regression/ports/pic14/support.c:
+	  Fix for renamed __asm.
+	* support/regression/tests/gcc-torture-execute-pr31169.c,
+	  support/regression/tests/bitfields.c,
+	  support/regression/tests/gcc-torture-execute-20100316-1.c,
+	  support/regression/tests/gcc-torture-execute-pr38422.c,
+	  support/regression/tests/gcc-torture-execute-921016-1.c:
+	  Disable tests that use bitfields of size greater than 8 bits, which is not yet supported by the pic16 port.
+
+2012-06-15 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sim/ucsim/z80.src/z80cl.h, z80.cc, inst_ed.cc:
+	  Added in0, out0, and tst instructions for z180 support.
+
+2012-06-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix lospre nonforward-substitution of POINTER_SET.
+	* src/SDCClospre.cc:
+	  Improve handling of invalidation at POINTER_SET.
+
+2012-06-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+ 	* support/regression/tests/and_survive.c:
+	  Test non-destructive and, regression test for #3534833.
+	* support/regression/tests/gcc-torture-execute-980707-1.c:
+	  Adapted and enabled test for mcs51.
+
+2012-06-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/hc08/gen.c:
+	  Fix cost calculation for branches.
+
+2012-06-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/hc08/gen.c:
+	  Improve storing of hx in assignment.
+
+2012-06-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix for 16-bit addition to avoid generating invalid add hl, iy.
+
+2012-06-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve multiplication for Rabbits.
+
+2012-06-13 Leland Morrison <enigmalee AT sourceforge.net>
+
+	* sdas/asz80/z80mch.c:  Allow the tst instruction for z180/.hd64 to
+	  use the two operand form (tst a,X) (fixes bug #3534833)
+
+2012-06-14 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve one-byte shifts, use fix of #3534833 in non-destructive and.
+
+2012-06-13 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve right shift.
+
+2012-06-13 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve 16-bit addition with operand in hl and result in iy.
+
+2012-06-13 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c:
+	  Improvements to left shift by literal.
+
+2012-06-13 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c,
+	  src/z80/peep.c:
+	  Improvements to non-destructive and, including #3526286.
+
+2012-06-12 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCmain.c,
+	  src/SDCCopt.c,
+	  src/SDCCglobl.h:
+	  Implement --nolospre option for disabling lospre.
+
+2012-06-12 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCicode.c:
+	  Fix debug output for GET_VALUE_AT_ADDRESS right operand.
+
+2012-06-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix handling of IFX in forward substitution.
+
+2012-06-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.cc:
+	  Disable lospre of assignments with iTemp source.
+
+2012-06-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Reorganize forward substitution code, lospre for GET_VALUE_AT_ADDRESS.
+
+2012-06-10 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/SDCCast.c (decorateType, &/|/^): optimize bool with literal,
+	  (optimizeGetAbit): prevent memory leak
+	* src/SDCCcse.c (algebraicOpts): optimize bool XOR literal
+	* src/SDCCsymt.c (computeType): also remove const from result,
+	  fixed bug 3531687 by removing wrong CHAR = ? 1 : 0 optimization to BOOL
+	* src/SDCCval.h,
+	* src/SDCCval.c (constBoolVal): new function
+	  (cheapestVal): added BOOL for 0 or 1,
+	* support/regression/tests/bug3531687.c: enabled test, removed unrelated
+	  and already covered test
+	* support/regression/tests/getbyte.c: new, added
+
+2012-06-09 Borut Razem <borut.razem AT gmail.com>
+
+	* support/regression/ports/pic14/spec.mk,
+	  support/regression/ports/pic16/spec.mk: 
+	  fixed pic -> pic14, --non-free -> --use-non-free
+
+2012-06-09 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/ralloc2.cc:
+	  Disallow source operand in h or l for >= 16-bit addition that also has a
+	  source operand on extended stack. Final part of fix for bug #3531660.
+	* support/regression/tests/bug3531687.c:
+	  Regression test for bug #3531687.
+
+2012-06-09 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCopt.c: fixed several missing def/use problems including 
+	  bug #3511517
+	* src/SDCCBBlock.c (addiCodeToeBBlock): fixed bug #3511516
+	* src/hc08/ralloc.c (packRegisters): fixed bug #3531045
+	* support/regression/tests/gcc-torture-execute-980604-1.c: reenabled
+	* support/regression/tests/gcc-torture-execute-980205.c: reenabled
+
+2012-06-07 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/main.c:
+	  Fix handling of --fomit-frame-pointer for z180, r2k and r3ka port.
+
+2012-06-07 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/ds390/gen.c (genAssign): no assignment for ruonly to ruonly
+	* src/SDCC.y,
+	* src/SDCCerr.c: W_COMP_RANGE, W_EMPTY_SOURCE_FILE & W_CONTROL_FLOW are pedantic
+	* src/SDCCast.c (processParms): no cast for signedness only,
+	  (resultTypePropagate): propagate for GETHBIT, GETABIT, GETBYTE & GETWORD,
+	  (decorateType: BITWISEAND): rearrange first,
+	  (decorateType: RETURN): no cast for signedness only,
+	  (optimizeGetHbit, optimizeGetAbit): use bitsForType instead of getSize and
+	   propagate resultType,
+	  (optimizeGetByte, optimizeGetWord): handle offset 0
+	* src/SDCClabel.c (deleteIfx),
+	* src/SDCCcse.c (ifxOptimize): W_CONTROL_FLOW is pedantic,
+	  (algebraicOpts: BITWISEAND, OR): use bitsForType instead of getSize
+	* src/SDCCicode.c (geniCodeLogic): W_COMP_RANGE is pedantic,
+	  (geniCodeUnary, geniCodeBinary): added param resType,
+	  (checkTypes): no cast for signedness only,
+	  (ast2iCode): propagate tree->ftype
+	* src/SDCCopt.c (optimizeCastCast): use bitsForType instead of getSize
+	* src/SDCCsymt.c (comparePtrType): only cast signedness if necessary
+	* src/SDCCsymt.h,
+	* src/SDCCicode.h: cosmetics
+
+2012-06-06 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c: fixed bugs #3531546 and #3531545
+
+2012-06-06 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix 16-Bit addition for interleaved pairs. Partial fix for bug #3531660.
+
+2012-06-06 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix POINTER_SET with surviving result partially in hl. Partial fix for bug #3531660.
+
+2012-06-06 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* device/lib/_autobaud.c: cosmetics
+	* device/lib/printfl.c: fixed bug 3513300
+
+2012-06-06 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c: Fixed bug #3531544. Fixed cast from h to hx.
+
+2012-06-05 Borut Razem <borut.razem AT gmail.com>
+
+	* support/sdbinutils/libiberty/makefile.in:
+	  excluded pex*.c files from build since pex-unix.c doesn't
+	  compile on cygwim mingw and they are not needed by sdbinutils
+	* doc/sdccman.lyx: compiler macro definitions not starting with
+	  double underscore characters are deprecated if --std-cXX
+	  command line option is defined;
+	  new compiler macros for processor definition were introduced
+	  for pic14 and pic16 targets
+
+2012-06-05 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc:
+	  Disallow surviving hl in addition with extended stack operands. Partial fix for bug #3531660.
+
+2012-06-05 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/mcs51/ralloc.c (packForPush),
+	* src/ds390/ralloc.c (packForPush),
+	* src/hc08/ralloc.c (packForPush),
+	* src/pic14/ralloc.c (packForPush),
+	* src/pic16/ralloc.c (packForPush): fixed bug #3527285
+
+2012-06-04 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix corner case in addition with extended stack right operand and low result byte in hl. Partial fix for bug #3531660.
+
+2012-06-04 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc:
+	  Disallow use of hl over comparison when there is an extended stack operand. Partial fix for bug #3531660.
+	* src/z80/gen.c:
+	  Save a during GET_VALUE_AT_ADDRESS when storing to extended stack operand. Partial fix for bug #3531660.
+
+2012-06-04 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c (loadRegIndex, storeRegIndexed): added missing
+	  rematOfs
+
+2012-06-03 Borut Razem <borut.razem AT gmail.com>
+
+	* src/pic14/main.c, src/pic16/main.c: re-enabled deprecated
+	  macros not starting with double underscore characters in
+	  combination with --std-cXX
+	* device/include/pic16/pic18fregs.h: modified for __SDCC_PICXXX
+
+2012-06-03 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Fix handling of extended stack operands in 16-bit unary minus and signed comparison. Partial fix for bug #3531660.
+
+2012-06-03 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCopt.c,
+	* src/hc08/ralloc.c: RFE 3526269 and 3526268
+
+2012-06-02 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/port.h:
+	  Fixed bug #3531540.
+
+2012-06-02 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCCerr.c, src/SDCCerr.h: added W_STRING_CANNOT_BE_TERMINATED
+	  src/SDCCast.c (createIvalCharPtr): fixed #3007799: generate different warning
+	  for initializer strings that fit in buffer without terminating '\0'. According
+	  C99 $6.7.8:14 this is allowed. With --less-pedantic no warning is generated.
+	  Modified version of patch by Jan Waclawek.
+
+2012-06-02 Borut Razem <borut.razem AT gmail.com>
+
+	* src/SDCCmain.c, src/pic14/main.c, src/pic16/main.c,
+	  support/scripts/pic14fam-h-gen.pl,
+	  applied modified patch
+	  #3531337 - The pic14 port, automatically creates the -DpicXXX,
+	  thanks to Molnar Karoly
+	* support/scripts/pic16fam-h-gen.pl: modified for __SDCC_PICXXX
+	* device/non-free/include/pic14/pic14fam.h,
+	  device/non-free/include/pic16/pic16fam.h: (re)generated
+
+2012-06-01 Borut Razem <borut.razem AT gmail.com>
+
+	* doc/README.txt, doc/INSTALL.txt: updated for SDCC 3.2.0 release
+
+2012-06-01 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/peeph-z80.def,
+	  src/z80/peeph-r2k.def:
+	  Shift optimization.
+
+2012-06-01 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.cc,
+	  src/SDCCsymt.h,
+	  src/SDCCsymt.c,
+	  src/SDCClospre.hpp:
+	  Relax lospre type checking.
+
+2012-06-01 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.cc:
+	  Disable lospre for literla assignments (can be reenabled once ports can rematerialize this).
+	* src/SDCClospre.hpp:
+	  Improve handling of volatile.
+
+2012-06-01 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Always use 16-bit addition when an operand and the result are in hl.
+
+2012-06-01 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c: Preparations for further pointer offset
+	  optimizations. Bug fixes for certain register assignment cases
+	  in complement, unary minus, bitwise operators, and bitfield
+	  unpacking.
+
+2012-05-31 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix handling of a in casts, bug #3531118.
+
+2012-05-31 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* doc/sdccman.lyx:
+	  Updated manual (mostly r3ka and s08 port).
+
+2012-05-31 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix handling of invalidating iCodes in lospre.
+	* src/SDCClospre.cc:
+	  Fix multiround-lospre.
+
+2012-05-31 Borut Razem <borut.razem AT gmail.com>
+
+	* debugger/mcs51/cmd.c: fixed bug #3530998 - source code bug..
+
+2012-05-31 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCsymt.h: handle up to 8 registers per symbol for long long
+	  support
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc.h,
+	  src/z80/gen.c,
+	  src/z80/ralloc2.cc:
+	  More flexible handling of a during pointer access in z80-related ports.
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/peeph-r2k.def:
+	  Fix invalid stack-relative increment.
+	* src/z80/gen.c:
+	  More efficient handling of 16-bit stores to stack.
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* sim/ucsim/z80.src/inst_r2k.cc:
+	  Fix handling of carry in 16-bit shift rotate instructions.
+	* src/z80/gen.c:
+	  Better 16 bit signed comparison for z80 related (except gbz80).
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Allow result of GET_VALUE_AT_ADDRESS in A for z80-related ports.
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Improve storing of literals to stack for Rabbits.
+
+2012-05-30 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix multibyte global to global assignment on gbz80 with de alive.
+
+2012-05-30 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/ralloc2.cc (operand_sane): fixed erroneous rejection of
+	  single byte operand register assignment due to out of bounds
+	  dereference
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fix for surviving pair in bitfield write.
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix for handling global variables over calls in lospre.
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c,
+	  src/hc08/gen.c:
+	  Added assertions to debug rematerialization issues.
+
+2012-05-29 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/ralloc.c (moveSendToCall, packRegisters): move SEND iCodes
+	  to immediately precede their CALL/PCALL for better live range info.
+	* src/hc08/gen.c (genSend): fixed bug swapping SEND iCode order.
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Fix invalid memory access bug.
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/z80/gen.c:
+	  Fix handling of ADDRESS_OF in lospre forward assignment.
+
+2012-05-29 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/gen.c:
+	  Fixed bug #3530276.
+
+2012-05-29 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCbitv.c (bitVectSetBit, bitVectUnSetBit),
+	* src/hc08/ralloc2.cc (set_surviving_regs),
+	* src/z80/ralloc2.cc (set_surviving_regs): Prohibit negative bit
+	  position in bit vectors to avoid memory corruption
+	* device/lib/clean.mk: add s08 and r3ka ports to cleaning
+
+2012-05-28 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c:
+	  Use Rabbit's cast to bool instruction for zeroing h,
+	  more efficient loading of pairs in shifts.
+	* src/z80/peep.c:
+	  Handle bool in instruction size calculations.
+
+2012-05-28 Borut Razem <borut.razem AT gmail.com>
+
+	* src/pic16/main.c: allow underscore characters in #pragma config
+
+2012-05-28 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Improve handling of results of substituted instructions in lospre.
+
+2012-05-27 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Fix handling of --max-allocs-per-node in lospre.
+
+2012-05-26 Borut Razem <borut.razem AT gmail.com>
+
+	* src/pic16/main.c: allow space characters in #pragma config
+
+2012-05-25 Borut Razem <borut.razem AT gmail.com>
+
+	* doc/sdccman.lyx: corrected #pragma configure to #pragma config
+
+2012-05-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Improve handling of --max-allocs-per-node in lospre.
+
+2012-05-25 Maarten Brock <sourceforge.brock AT dse.nl>
+
+	* src/hc08/gen.c (genPointerSet): fixed warning
+
+2012-05-25 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCicode.h,
+	  src/SDCCicode.c,
+	  src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Fixes for handling of globals and volatile in lospre.
+
+2012-05-25 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* support/scripts/sdcc.nsi: fix my typo in r3ka path
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  lospre.
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/peeph-r2k.def,
+	  src/z80/peeph-z80.def,
+	  src/z80/peeph-gbz80.def:
+	  Jump optimization.
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/z80/ralloc2.cc,
+	  src/z80/gen.c:
+	  Non-destructive & with bit literal.
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Preparations for lospre.
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/hc08/peeph.def:
+	  Improve elimination of branches.
+
+2012-05-24 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Preparations for lospre.
+	* src/z80/gen.c:
+	  More verbose debugging for variables that are not in registers, but should be.
+
+2012-05-24 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* support/scripts/sdcc.nsi: added r3ka and s08 to installer
+	* support/sdbinutils/binutils/configure.in,
+	* support/sdbinutils/binutils/configure: fix bug #3527589
+	* src/SDCCcse.c (newCseDef): fix bug #3528899
+
+2012-05-23 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Preparations for lospre.
+
+2012-05-23 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c: Preparations for further pointer offset
+	   optimizations
+
+2012-05-22 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/hc08/peeph.def:
+	  Allow disabling of tail-call and jump to return optimization.
+
+2012-05-22 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/hc08/gen.c: Fixed inconsistent offsets for 16-bit register
+	  accesses. Removed broken and unused AOP_STR type. Prohibit loading
+	  h via hx from volatile operands.
+
+2012-05-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* support/regression/tests/memory.c,
+	  src/z80/gen.c,
+	  src/port.h,
+	  src/SDCCglue.c,
+	  src/z80/main.c,
+	  src/z80/peep.c:
+	  Use lsidr for built-in memset() for r3ka.
+	* src/hc08/gen.c:
+	  Use ldhx, sthx for memory-to-memory assignment and cast.
+	* src/hc08/peeph.def:
+	  Basic tail call optimization.
+
+2012-05-21 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/hc08/gen.c:
+	  More efficient loading of H and HX for hc08 and s08.
+
 2012-05-21 Philipp Klaus Krause <pkk AT spth.de>
 
 	* support/regression/tests/setjmp.c:
@@ -6,6 +1941,8 @@
 	  support/regression/tests/gcc-torture-execute-20010224-1.c,
 	  support/regression/tests/gcc-torture-execute-20030408-1.c:
 	  Disable tests for r3ka.
+	* support/regression/Makefile.in:
+	  Add ucr3ka target to z80 target.
 
 2012-05-21 Leland Morrison <enigmalee AT sourceforge.net>
 
@@ -214,6 +2151,17 @@
 	* sim/ucsim/z80.src/inst_ed_r2k.cc: support for r3ka instructions
 	* sim/ucsim/z80.src/inst_ed.cc: change to allow overloading of inst_ed_
 
+2012-05-16 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Early preparations for lospre.
+
+2012-05-15 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp:
+	  Early preparations for lospre.
+
 2012-05-14 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
 
 	* src/hc08/gen.c: correct some dry run costs, update genDivOneByte()
@@ -230,6 +2178,19 @@
 	* src/ds390/gen.c (genGenPointerGet, genGenPointerSet): fixed bug 3509705
 	* support/regression/compact-results.py: align results
 	* support/regression/tests/gcc-torture-execute-921013-1.c: enabled tests
+
+2012-05-12 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCClospre.cc:
+	  Early preparations for lospre.
+
+2012-05-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCCopt.c,
+	  src/SDCCopt.c,
+	  src/SDCClospre.cc,
+	  Preparations for finding lospre optimization candidates.
 
 2012-05-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
 
@@ -257,6 +2218,15 @@
 	  src/hc08/ralloc2.cc:
 	  Added some debug info code.
 
+2012-05-11 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
+
+	* src/SDCClospre.hpp,
+	  src/SDCCralloc.hpp,
+	  src/SDCCnaddr.cc,
+	  src/SDCCnaddr.hpp,
+	  src/SDCClospre.cc:
+	  Declare some data types for lospre.
+	
 2012-05-09 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
 
 	* src/hc08/gen.c,
@@ -479,7 +2449,7 @@
 	  Enable replacing division by power of two by conditional addition and shift (for hc08, z80, z180, gbz80 and r2k).
 	* src/z80/gen.c,
 	  src/mcs51/gen.c:
-	  Fortify a "/* I assume that […]" comment by an assertion that would have saved me some time.
+	  Fortify a "/* I assume that [...]" comment by an assertion that would have saved me some time.
 
 2012-04-20 Philipp Klaus Krause <philipp AT informatik.uni-frankfurt.de>
 
@@ -1270,11 +3240,11 @@
 
 2012-03-16 Borut Razem <borut.razem AT gmail.com>
 
-	* sdcc.sln, src\sdcc.vcxproj, src\sdcc.vcxproj.filters,
-	  src\yacc.vcxproj:
+	* sdcc.sln, src/sdcc.vcxproj, src/sdcc.vcxproj.filters,
+	  src/yacc.vcxproj:
 	  project src renamed to sdcc, removed project yacc
-	* doc\sdccman.lyx, src\SDCCasm.c, src\SDCCicode.h,
-	  src\SDCCast.c, src\SDCCast.h, src\pic16\main.c:
+	* doc/sdccman.lyx, src/SDCCasm.c, src/SDCCicode.h,
+	  src/SDCCast.c, src/SDCCast.h, src/pic16/main.c:
 	  implemeted pragma config for pic16 target, solution
 	  of bug #3486890 - pic16 port config directive warning
 	* src/Makefile.in, src/sdcc.vcxproj:
@@ -6738,7 +8708,7 @@
 2010-09-18 Borut Razem <borut.razem AT siol.net>
 
 	* debugger/mcs51/cmd.c:
-	  fixed warning: suggest explicit braces to avoid ambiguous ‘else’
+	  fixed warning: suggest explicit braces to avoid ambiguous 'else'
 
 2010-09-18 Philipp Klaus Krause <pkk AT spth.de>
 

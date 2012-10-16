@@ -1,25 +1,21 @@
 /*-------------------------------------------------------------------------
-
   SDCCglue.c - glues everything we have done together into one file.
-                Written By -  Sandeep Dutta . sandeep.dutta@usa.net (1998)
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any
-   later version.
+  Copyright (C) 1998 Sandeep Dutta . sandeep.dutta@usa.net
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 2, or (at your option) any
+  later version.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-   In other words, you are welcome to use, share and improve this program.
-   You are forbidden to forbid anyone else to use, share and improve
-   what you give them.   Help stamp out software-hoarding!
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 -------------------------------------------------------------------------*/
 
 #include "common.h"
@@ -209,15 +205,16 @@ emitRegularMap (memmap * map, bool addPublics, bool arFlag)
          it is a global variable */
       if (sym->ival && sym->level == 0)
         {
-          if ((SPEC_OCLS (sym->etype) == xidata) && !SPEC_ABSA (sym->etype))
+          if ((SPEC_OCLS (sym->etype) == xidata || SPEC_OCLS (sym->etype) == initialized) && !SPEC_ABSA (sym->etype))
             {
               sym_link *t;
-              /* create a new "XINIT (CODE)" symbol, that will be emited later
+              /* create a new "XINIT (CODE)" symbol, that will be emitted later
                  in the static seg */
               newSym = copySymbol (sym);
-              SPEC_OCLS (newSym->etype) = xinit;
+              SPEC_OCLS (newSym->etype) = (SPEC_OCLS (sym->etype) == xidata) ? xinit : initializer;
               SNPRINTF (newSym->name, sizeof (newSym->name), "__xinit_%s", sym->name);
               SNPRINTF (newSym->rname, sizeof (newSym->rname), "__xinit_%s", sym->rname);
+
               /* find the first non-array link */
               t = newSym->type;
               while (IS_ARRAY (t))
@@ -230,7 +227,7 @@ emitRegularMap (memmap * map, bool addPublics, bool arFlag)
               resolveIvalSym (newSym->ival, newSym->type);
 
               // add it to the "XINIT (CODE)" segment
-              addSet (&xinit->syms, newSym);
+              addSet ((SPEC_OCLS (sym->etype) == xidata) ? &xinit->syms : &initializer->syms, newSym);
 
               if (!SPEC_ABSA (sym->etype))
                 {
@@ -272,7 +269,7 @@ emitRegularMap (memmap * map, bool addPublics, bool arFlag)
                   // check if this is not a constant expression
                   if (!constExprTree (ival))
                     {
-                      werror (E_CONST_EXPECTED, "found expression");
+                      werrorfl (ival->filename, ival->lineno, E_CONST_EXPECTED, "found expression");
                       // but try to do it anyway
                     }
                   allocInfo = 0;
@@ -543,7 +540,7 @@ printChar (struct dbuf_s *oBuf, const char *s, int plen)
       i = 60;
       while (i && pplen < plen)
         {
-          if (*s < ' ' || *s == '\"' || *s == '\\')
+          if (!isprint((unsigned char) *s) || *s == '\"' || *s == '\\')
             {
               *p = '\0';
               if (p != buf)
@@ -684,6 +681,11 @@ printIvalType (symbol * sym, sym_link * type, initList * ilist, struct dbuf_s *o
       // assuming a warning has been thrown
       val = constCharVal (0);
     }
+  if (val->etype && SPEC_SCLS (val->etype) != S_LITERAL)
+    {
+      werrorfl (ilist->filename, ilist->lineno, E_CONST_EXPECTED);
+      val = constCharVal (0);
+    }
 
   /* check if the literal value is within bounds */
   if (checkConstantRange (type, val->etype, '=', FALSE) == CCR_OVL)
@@ -803,6 +805,11 @@ printIvalBitFields (symbol ** sym, initList ** ilist, struct dbuf_s *oBuf)
           /* not an unnamed bit-field structure member */
           value *val = list2val (lilist);
 
+          if (val && val->etype && SPEC_SCLS (val->etype) != S_LITERAL)
+            {
+              werrorfl (lilist->filename, lilist->lineno, E_CONST_EXPECTED);
+              val = constCharVal (0);
+            }
           if (size)
             {
               if (bit_length > 8)
@@ -875,23 +882,23 @@ printIvalStruct (symbol * sym, sym_link * type, initList * ilist, struct dbuf_s 
       int size;
       /* skip past holes, print value */
       while (iloop && iloop->type == INIT_HOLE)
-	{
-	  iloop = iloop->next;
-	  sflds = sflds->next;
-	}
+        {
+          iloop = iloop->next;
+          sflds = sflds->next;
+        }
       printIval (sym, sflds->type, iloop, oBuf, 1);
       /* pad out with zeros if necessary */
       size = getSize(type) - getSize(sflds->type);
       for ( ; size > 0 ; size-- )
-	{
-	  dbuf_tprintf (oBuf, "\t!db !constbyte\n", 0);
-	}
+        {
+          dbuf_tprintf (oBuf, "\t!db !constbyte\n", 0);
+        }
       /* advance past holes to find out if there were excess initializers */
       do
-	{
-	  iloop = iloop ? iloop->next : NULL;
-	  sflds = sflds->next;
-	}
+        {
+          iloop = iloop ? iloop->next : NULL;
+          sflds = sflds->next;
+        }
       while (iloop && iloop->type == INIT_HOLE);
     }
   else
@@ -1344,15 +1351,15 @@ printIval (symbol * sym, sym_link * type, initList * ilist, struct dbuf_s *oBuf,
   if (ilist && ilist->type == INIT_HOLE)
     {
       if (IS_AGGREGATE (type))
-	{
-	  ilist = newiList(INIT_DEEP, NULL); /* init w/ {} */
-	}
+        {
+          ilist = newiList(INIT_DEEP, NULL); /* init w/ {} */
+        }
       else
-	{
-	  ast *ast = newAst_VALUE (constVal("0"));
-	  ast = decorateType (ast, RESULT_TYPE_NONE);
-	  ilist = newiList(INIT_NODE, ast);
-	}
+        {
+          ast *ast = newAst_VALUE (constVal("0"));
+          ast = decorateType (ast, RESULT_TYPE_NONE);
+          ilist = newiList(INIT_NODE, ast);
+        }
     }
 
   /* if structure then    */
@@ -1432,7 +1439,7 @@ printIval (symbol * sym, sym_link * type, initList * ilist, struct dbuf_s *oBuf,
 /* emitStaticSeg - emitcode for the static segment                 */
 /*-----------------------------------------------------------------*/
 void
-emitStaticSeg (memmap * map, struct dbuf_s *oBuf)
+emitStaticSeg (memmap *map, struct dbuf_s *oBuf)
 {
   symbol *sym;
 
@@ -1484,7 +1491,7 @@ emitStaticSeg (memmap * map, struct dbuf_s *oBuf)
               dbuf_printf (oBuf, "%s:\n", sym->rname);
               ++noAlloc;
               resolveIvalSym (sym->ival, sym->type);
-              printIval (sym, sym->type, sym->ival, oBuf, map != xinit);
+              printIval (sym, sym->type, sym->ival, oBuf, (map != xinit && map != initializer));
               --noAlloc;
               /* if sym is a simple string and sym->ival is a string,
                  WE don't need it anymore */
@@ -1531,6 +1538,7 @@ emitMaps (void)
   /* no special considerations for the following
      data, idata & bit & xdata */
   emitRegularMap (data, TRUE, TRUE);
+  emitRegularMap (initialized, TRUE, TRUE);
   for (nm = namedspacemaps; nm; nm = nm->next)
     emitRegularMap (nm->map, TRUE, TRUE);
   emitRegularMap (idata, TRUE, TRUE);
@@ -1558,6 +1566,11 @@ emitMaps (void)
     {
       dbuf_tprintf (&code->oBuf, "\t!area\n", xinit->sname);
       emitStaticSeg (xinit, &code->oBuf);
+    }
+  if (initializer)
+    {
+      dbuf_tprintf (&code->oBuf, "\t!area\n", initializer->sname);
+      emitStaticSeg (initializer, &code->oBuf);
     }
   dbuf_tprintf (&code->oBuf, "\t!area\n", c_abs->sname);
   emitStaticSeg (c_abs, &code->oBuf);
@@ -1807,10 +1820,12 @@ glue (void)
   /* initial comments */
   initialComments (asmFile);
 
-  if (TARGET_IS_Z180)
-    fprintf (asmFile, "\t.hd64\n");
   if (TARGET_IS_S08)
     fprintf (asmFile, "\t.cs08\n");
+  else if (TARGET_IS_Z180)
+    fprintf (asmFile, "\t.hd64\n");
+  else if (TARGET_IS_R3KA)
+    fprintf (asmFile, "\t.r3k\n");
 
   /* print module name */
   tfprintf (asmFile, "\t!module\n", moduleName);
@@ -1929,6 +1944,15 @@ glue (void)
   fprintf (asmFile, ";%s ram data\n", mcs51_like ? " internal" : "");
   fprintf (asmFile, "%s", iComments2);
   dbuf_write_and_destroy (&data->oBuf, asmFile);
+
+  /* copy the intialized segment */
+  if (initialized)
+    {
+      fprintf (asmFile, "%s", iComments2);
+      fprintf (asmFile, ";%s ram data\n", mcs51_like ? " internal" : "");
+      fprintf (asmFile, "%s", iComments2);
+      dbuf_write_and_destroy (&initialized->oBuf, asmFile);
+    }
 
   /* copy segments for named address spaces */
   for (nm = namedspacemaps; nm; nm = nm->next)

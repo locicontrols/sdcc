@@ -32,13 +32,9 @@
 #include <signal.h>
 #include "common.h"
 #include <ctype.h>
-#include "newalloc.h"
 #include "dbuf_string.h"
 #include "SDCCerr.h"
-#include "SDCCsystem.h"
 #include "SDCCmacro.h"
-#include "SDCCutil.h"
-#include "SDCCdebug.h"
 #include "SDCCargs.h"
 
 #ifdef _WIN32
@@ -51,7 +47,7 @@
 /* REMOVE ME!!! */
 extern int yyparse (void);
 
-FILE *srcFile;                  /* source file          */
+FILE *srcFile;                  /* source file */
 const char *fullSrcFileName;    /* full name for the source file; */
                                 /* can be NULL while c1mode or linking without compiling */
 const char *fullDstFileName;    /* full name for the output file; */
@@ -79,10 +75,10 @@ set *userIncDirsSet = NULL;     /* list of user include directories */
 set *libDirsSet = NULL;         /* list of lib search directories */
 bool regalloc_dry_run = FALSE;
 
-static const char *dstPath = "";    /* path for the output files; */
-                                /* "" is equivalent with cwd */
-static const char *moduleNameBase;  /* module name base is source file without path and extension */
-                                /* can be NULL while linking without compiling */
+static const char *dstPath = "";          /* path for the output files; */
+                                          /* "" is equivalent with cwd */
+static const char *moduleNameBase = NULL; /* module name base is source file without path and extension */
+                                          /* can be NULL while linking without compiling */
 
 /* uncomment JAMIN_DS390 to always override and use ds390 port
   for mcs51 work.  This is temporary, for compatibility testing. */
@@ -95,7 +91,7 @@ static int ds390_jammed = 0;
    TODO: replace them with local buffers */
 char buffer[PATH_MAX * 2];
 
-#define LENGTH(_a)      (sizeof(_a)/sizeof(*(_a)))
+#define LENGTH(_a)      (sizeof (_a) / sizeof (*(_a)))
 
 #define OPTION_HELP             "--help"
 #define OPTION_OUT_FMT_IHX      "--out-fmt-ihx"
@@ -152,6 +148,8 @@ char buffer[PATH_MAX * 2];
 #define OPTION_NO_OPTSDCC_IN_ASM "--no-optsdcc-in-asm"
 #define OPTION_DUMP_GRAPHS      "--dump-graphs"
 #define OPTION_MAX_ALLOCS_PER_NODE  "--max-allocs-per-node"
+#define OPTION_NO_LOSPRE        "--nolospre"
+#define OPTION_LOSPRE_UNSAFE_READ "--lospre-unsafe-read"
 
 static const OPTION optionsTable[] = {
   {0,   NULL, NULL, "General options"},
@@ -233,6 +231,8 @@ static const OPTION optionsTable[] = {
   {0,   OPTION_OPT_CODE_SPEED, NULL, "Optimize for code speed rather than size"},
   {0,   OPTION_OPT_CODE_SIZE, NULL, "Optimize for code size rather than speed"},
   {0,   OPTION_MAX_ALLOCS_PER_NODE, &options.max_allocs_per_node, "Maximum number of register assignments considered at each node of the tree decomposition", CLAT_INTEGER},
+  {0,   OPTION_NO_LOSPRE, NULL, "Disable lospre"},
+  {0,   OPTION_LOSPRE_UNSAFE_READ, NULL, "Allow unsafe reads in lospre"},
 
   {0,   NULL, NULL, "Internal debugging options"},
   {0,   "--dumpraw", &options.dump_raw, "Dump the internal structure after the initial parse"},
@@ -302,7 +302,7 @@ static const char *_baseValues[] = {
   NULL
 };
 
-static const char *_preCmd = "{cpp} -nostdinc -Wall {cppstd}{cppextraopts} \"{fullsrcfilename}\" \"{cppoutfilename}\"";
+static const char *_preCmd = "{cpp} -nostdinc -Wall {cppstd}{cppextraopts} {fullsrcfilename} {cppoutfilename}";
 
 PORT *port;
 
@@ -614,6 +614,8 @@ setDefaultOptions (void)
   optimize.loopInvariant = 1;
   optimize.loopInduction = 1;
   options.max_allocs_per_node = 3000;
+  optimize.lospre = 1;
+  optimize.lospre_unsafe_read = 0;
 
   /* now for the ports */
   port->setDefaultOptions ();
@@ -1084,6 +1086,18 @@ parseCmdLine (int argc, char **argv)
             {
               optimize.codeSpeed = 0;
               optimize.codeSize = 1;
+              continue;
+            }
+
+          if (strcmp (argv[i], OPTION_NO_LOSPRE) == 0)
+            {
+              optimize.lospre = 0;
+              continue;
+            }
+
+          if (strcmp (argv[i], OPTION_LOSPRE_UNSAFE_READ) == 0)
+            {
+              optimize.lospre_unsafe_read = 1;
               continue;
             }
 
@@ -1790,45 +1804,13 @@ linkEdit (char **envp)
 
   if (port->linker.cmd)
     {
-      char *buffer2;
-      char buffer3[PATH_MAX];
-      set *tempSet = NULL, *libSet = NULL;
+      /* shell_escape file names */
+      char *b3 = shell_escape (dbuf_c_str (&linkerScriptFileName));
+      char *bfn = shell_escape (dbuf_c_str (&binFileName));
 
-      strcpy (buffer3, dbuf_c_str (&linkerScriptFileName));
-      if ( /*TARGET_IS_PIC16 || */ TARGET_IS_PIC14)
-        {
-          /* use $l to set the linker include directories */
-          tempSet = appendStrSet (libDirsSet, "-I\"", "\"");
-          mergeSets (&linkOptionsSet, tempSet);
-
-          tempSet = appendStrSet (libPathsSet, "-I\"", "\"");
-          mergeSets (&linkOptionsSet, tempSet);
-
-          /* use $3 for libraries from command line --> libSet */
-          mergeSets (&libSet, libFilesSet);
-
-          tempSet = setFromSetNonRev (relFilesSet);
-          mergeSets (&libSet, tempSet);
-//        libSet = reverseSet(libSet);
-
-          if (fullSrcFileName)
-            {
-//            strcpy(buffer3, strrchr(fullSrcFileName, DIR_SEPARATOR_CHAR)+1);
-              /* if it didn't work, revert to old behaviour */
-              if (buffer3[0] == '\0')
-                strcpy (buffer3, dstFileName);
-              strcat (buffer3, port->linker.rel_ext);
-
-            }
-          else
-            buffer3[0] = '\0';
-        }
-
-      buffer2 = buildCmdLine (port->linker.cmd, buffer3, dbuf_c_str (&binFileName), (libSet ? joinStrSet (libSet) : NULL),
-                    linkOptionsSet);
-
-      buf = buildMacros (buffer2);
-      Safe_free (buffer2);
+      buf = buildCmdLine (port->linker.cmd, b3, bfn, NULL, linkOptionsSet);
+      Safe_free (b3);
+      Safe_free (bfn);
     }
   else
     {
@@ -1894,8 +1876,14 @@ assemble (char **envp)
 
       if (port->assembler.cmd)
         {
-          buf = buildCmdLine (port->assembler.cmd, dstFileName, dbuf_c_str (&asmName),
+          /* shell_escape file names */
+          char *dfn = shell_escape (dstFileName);
+          char *asmn = shell_escape (dbuf_c_str (&asmName));
+
+          buf = buildCmdLine (port->assembler.cmd, dfn, asmn,
                     options.debug ? port->assembler.debug_opts : port->assembler.plain_opts, asmOptionsSet);
+          Safe_free (dfn);
+          Safe_free (asmn);
         }
       else
         {
@@ -2108,23 +2096,6 @@ preProcess (char **envp)
           addSet (&preArgvSet, Safe_strdup ("-D__{port}"));
         }
 
-      if (port && port->processor && TARGET_IS_PIC14)
-        {
-          struct dbuf_s dbuf;
-
-          dbuf_init (&dbuf, 512);        
-          dbuf_printf (&dbuf, "-D__SDCC_PROCESSOR=\"%s\"", port->processor);
-          addSet (&preArgvSet, dbuf_detach_c_str (&dbuf));
-        }
-      if (options.std_sdcc && port && port->processor && TARGET_IS_PIC14)
-        {
-          struct dbuf_s dbuf;
-
-          dbuf_init (&dbuf, 512);        
-          dbuf_printf (&dbuf, "-DSDCC_PROCESSOR=\"%s\"", port->processor);
-          addSet (&preArgvSet, dbuf_detach_c_str (&dbuf));
-        }
-
       /* Optinal C features not (yet) supported by sdcc */
       addSet (&preArgvSet, Safe_strdup ("-D__STDC_NO_COMPLEX__"));
       addSet (&preArgvSet, Safe_strdup ("-D__STDC_NO_THREADS__"));
@@ -2134,7 +2105,7 @@ preProcess (char **envp)
       /* standard include path */
       if (!options.nostdinc)
         {
-          inclList = appendStrSet (includeDirsSet, "-isystem \"", "\"");
+          inclList = processStrSet (includeDirsSet, "-isystem ", NULL, shell_escape);
           mergeSets (&preArgvSet, inclList);
         }
 
@@ -2146,7 +2117,10 @@ preProcess (char **envp)
       if (preProcOnly && fullDstFileName)
         {
           /* -E and -o given */
-          setMainValue ("cppoutfilename", fullDstFileName);
+          char *s = shell_escape (fullDstFileName);
+
+          setMainValue ("cppoutfilename", s);
+          Safe_free (s);
         }
       else
         {
@@ -2238,18 +2212,18 @@ setIncludePath (void)
       char *p;
       set *tempSet;
 
-      tempSet = appendStrSet (dataDirsSet, NULL, INCLUDE_DIR_SUFFIX);
-      includeDirsSet = appendStrSet (tempSet, NULL, DIR_SEPARATOR_STRING);
-      includeDirsSet = appendStrSet (includeDirsSet, NULL, port->target);
+      tempSet = processStrSet (dataDirsSet, NULL, INCLUDE_DIR_SUFFIX, NULL);
+      includeDirsSet = processStrSet (tempSet, NULL, DIR_SEPARATOR_STRING, NULL);
+      includeDirsSet = processStrSet (includeDirsSet, NULL, port->target, NULL);
       mergeSets (&includeDirsSet, tempSet);
 
       if (options.use_non_free)
         {
           set *tempSet1;
 
-          tempSet = appendStrSet (dataDirsSet, NULL, NON_FREE_INCLUDE_DIR_SUFFIX);
-          tempSet1 = appendStrSet (tempSet, NULL, DIR_SEPARATOR_STRING);
-          tempSet1 = appendStrSet (tempSet1, NULL, port->target);
+          tempSet = processStrSet (dataDirsSet, NULL, NON_FREE_INCLUDE_DIR_SUFFIX, NULL);
+          tempSet1 = processStrSet (tempSet, NULL, DIR_SEPARATOR_STRING, NULL);
+          tempSet1 = processStrSet (tempSet1, NULL, port->target, NULL);
           mergeSets (&tempSet1, tempSet);
           mergeSets (&includeDirsSet, tempSet1);
         }
@@ -2295,13 +2269,13 @@ setLibPath (void)
       targetname = port->target;
 
       dbuf_makePath (&dbuf, LIB_DIR_SUFFIX, port->general.get_model ? port->general.get_model () : targetname);
-      libDirsSet = appendStrSet (dataDirsSet, NULL, dbuf_c_str (&dbuf));
+      libDirsSet = processStrSet (dataDirsSet, NULL, dbuf_c_str (&dbuf), NULL);
 
       if (options.use_non_free)
         {
           dbuf_set_length (&dbuf, 0);
           dbuf_makePath (&dbuf, NON_FREE_LIB_DIR_SUFFIX, port->general.get_model ? port->general.get_model () : targetname);
-          mergeSets (&libDirsSet, appendStrSet (dataDirsSet, NULL, dbuf_c_str (&dbuf)));
+          mergeSets (&libDirsSet, processStrSet (dataDirsSet, NULL, dbuf_c_str (&dbuf), NULL));
         }
 
       if ((p = getenv (SDCC_LIB_NAME)) != NULL)
@@ -2368,13 +2342,19 @@ setDataPaths (const char *argv0)
 static void
 initValues (void)
 {
+  char *s;
+
   populateMainValues (_baseValues);
   setMainValue ("port", port->target);
   setMainValue ("objext", port->linker.rel_ext);
   setMainValue ("asmext", port->assembler.file_ext);
 
   setMainValue ("dstfilename", dstFileName);
-  setMainValue ("fullsrcfilename", fullSrcFileName ? fullSrcFileName : "fullsrcfilename");
+
+  s = fullSrcFileName ? shell_escape (fullSrcFileName) : "fullsrcfilename";
+  setMainValue ("fullsrcfilename", s);
+  if (fullSrcFileName)
+    Safe_free (s);
 
   if (options.cc_only && fullDstFileName)
     /* compile + assemble and -o given: -o specifies name of object file */

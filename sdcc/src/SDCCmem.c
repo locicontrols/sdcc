@@ -30,6 +30,8 @@ memmap *xstack = NULL;          /* xternal stack data          */
 memmap *istack = NULL;          /* internal stack              */
 memmap *code = NULL;            /* code segment                */
 memmap *data = NULL;            /* internal data upto 128      */
+memmap *initialized = NULL;     /* initialized data, such as initialized, nonzero globals or local statics. */
+memmap *initializer = NULL;     /* a copz of the values for the initialized data from initialized in code space */
 memmap *pdata = NULL;           /* paged external data         */
 memmap *xdata = NULL;           /* external data               */
 memmap *xidata = NULL;          /* the initialized xdata       */
@@ -191,6 +193,9 @@ initMem ()
      POINTER-TYPE   -   POINTER
    */
   data = allocMap (0, 0, 0, 1, 0, 0, options.data_loc, DATA_NAME, 'E', POINTER);
+
+  initialized = allocMap (0, 0, 0, 1, 0, 0, options.data_loc, INITIALIZED_NAME, 'E', POINTER);
+  initializer = allocMap (0, 0, 0, 1, 0, 1, options.code_loc, INITIALIZER_NAME, 'C', CPOINTER);
 
   /* Absolute internal storage segment ;
      SFRSPACE       -   NO
@@ -436,10 +441,15 @@ defaultOClass (symbol *sym)
         }
       break;
     case S_DATA:
-      /* absolute initialized global */
+      /* Absolute initialized global */
       if (sym->ival && SPEC_ABSA (sym->etype))
         {
-          SPEC_OCLS(sym->etype) = d_abs;
+          SPEC_OCLS (sym->etype) = d_abs;
+        }
+      /* Other initialized global */
+      else if (sym->ival && port->mem.initialized_name && sym->level == 0)
+        {
+          SPEC_OCLS (sym->etype) = initialized;
         }
       else
         {
@@ -541,8 +551,7 @@ allocGlobal (symbol * sym)
     }
 
   /* if this is a bit variable and no storage class */
-  if (IS_SPEC(sym->type) && SPEC_NOUN (sym->type) == V_BIT)
-      /*&& SPEC_SCLS (sym->etype) == S_BIT*/
+  if (bit && IS_SPEC(sym->type) && SPEC_NOUN (sym->type) == V_BIT)
     {
       SPEC_OCLS (sym->type) = bit;
       allocIntoSeg (sym);
@@ -557,7 +566,7 @@ allocGlobal (symbol * sym)
   /* if it is fixed, then allocate depending on the */
   /* current memory model, same for automatics      */
   if (SPEC_SCLS (sym->etype) == S_FIXED ||
-      (TARGET_IS_PIC16 && (SPEC_SCLS (sym->etype) == S_REGISTER) && (sym->level==0)) ||
+      (TARGET_IS_PIC16 && (SPEC_SCLS (sym->etype) == S_REGISTER) && (sym->level == 0)) ||
       SPEC_SCLS (sym->etype) == S_AUTO)
     {
       if (port->mem.default_globl_map != xdata)
@@ -566,6 +575,10 @@ allocGlobal (symbol * sym)
             {
               /* absolute initialized global */
               SPEC_OCLS (sym->etype) = x_abs;
+            }
+          else if (sym->ival && sym->level == 0 && port->mem.initialized_name)
+            {
+              SPEC_OCLS (sym->etype) = initialized;
             }
           else
             {
@@ -814,7 +827,7 @@ allocLocal (symbol * sym)
     }
 
   /* if this is a bit variable and no storage class */
-  if (IS_SPEC(sym->type) && SPEC_NOUN (sym->type) == V_BIT)
+  if (bit && IS_SPEC(sym->type) && SPEC_NOUN (sym->type) == V_BIT)
     {
       SPEC_SCLS (sym->type) = S_BIT;
       SPEC_OCLS (sym->type) = bit;

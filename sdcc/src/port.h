@@ -44,7 +44,7 @@
 #define TARGET_IS_S08      (port->id == TARGET_ID_S08)
 
 #define TARGET_MCS51_LIKE  (TARGET_IS_MCS51 || TARGET_IS_DS390 || TARGET_IS_DS400)
-#define TARGET_Z80_LIKE    (TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_GBZ80 || TARGET_IS_R2K)
+#define TARGET_Z80_LIKE    (TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_GBZ80 || TARGET_IS_R2K || TARGET_IS_R3KA)
 #define TARGET_IS_RABBIT   (TARGET_IS_R2K || TARGET_IS_R3KA)
 #define TARGET_HC08_LIKE   (TARGET_IS_HC08 || TARGET_IS_S08)
 #define TARGET_PIC_LIKE    (TARGET_IS_PIC14 || TARGET_IS_PIC16)
@@ -194,7 +194,7 @@ typedef struct
     const char *const istack_name;
     /*
      * The following 2 items can't be const pointers
-     * due to ugly implementation in z80 target;
+     * due to ugly implementation in gbz80 target;
      * this should be fixed in src/z80/main.c (borutr)
      */
     const char *code_name;
@@ -214,6 +214,8 @@ typedef struct
     const char *const cabs_name;        // const absolute data (code or not)
     const char *const xabs_name;        // absolute xdata/pdata
     const char *const iabs_name;        // absolute idata/data
+    const char *const initialized_name; // Initialized global (and static local) variables.
+    const char *const initializer_name; // A code copy of initialized_name (to be copied for fast initialization).
     struct memmap *default_local_map;   // default location for auto vars
     struct memmap *default_globl_map;   // default location for globl vars
     int code_ro;                /* code space read-only 1=yes */
@@ -252,6 +254,7 @@ typedef struct
         mul/div operation the processor can do natively
         Eg if the processor has an 8 bit mul, native below is 2 */
     unsigned muldiv;
+    /** Size of the biggest shift the port can handle. -1 if port can handle shifts of arbitrary size. */
     unsigned shift;
   }
   support;
@@ -383,6 +386,8 @@ typedef struct
   int unqualified_pointer;      /* unqualified pointers type is  */
   int reset_labelKey;           /* reset Label no 1 at the start of a function */
   int globals_allowed;          /* global & static locals not allowed ?  0 ONLY TININative */
+
+  int num_regs;                /* Number of registers handled in the tree-decomposition-based register allocator in SDCCralloc.hpp */
 #define PORT_MAGIC 0xAC32
   /** Used at runtime to detect if this structure has been completly filled in. */
   int magic;
@@ -403,7 +408,7 @@ extern PORT z180_port;
 #if !OPT_DISABLE_R2K
 extern PORT r2k_port;  /* Rabbit 2000/3000 */
 #endif
-#if !OPT_DISABLE_R2K
+#if !OPT_DISABLE_R3KA
 extern PORT r3ka_port; /* Rabbit 3000A */
 #endif
 #if !OPT_DISABLE_GBZ80

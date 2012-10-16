@@ -101,8 +101,6 @@ initSymt (void)
 
   for (i = 0; i < 256; i++)
     SymbolTab[i] = StructTab[i] = (void *) NULL;
-
-
 }
 
 /*-----------------------------------------------------------------*/
@@ -252,6 +250,9 @@ findSymWithLevel (bucket ** stab, symbol * sym)
 {
   bucket *bp;
 
+  if (!sym)
+    return sym;
+
   bp = stab[hashKey (sym->name)];
 
   /**
@@ -294,6 +295,9 @@ void *
 findSymWithBlock (bucket ** stab, symbol * sym, int block)
 {
   bucket *bp;
+
+  if (!sym)
+    return sym;
 
   bp = stab[hashKey (sym->name)];
   while (bp)
@@ -1110,7 +1114,6 @@ bitsForType (sym_link * p)
 
   if (IS_SPEC (p))
     {                           /* if this is the specifier then */
-
       switch (SPEC_NOUN (p))
         {                       /* depending on the specifier type */
         case V_INT:
@@ -1156,7 +1159,6 @@ bitsForType (sym_link * p)
       return (FPTRSIZE * 8);
     case GPOINTER:
       return (GPTRSIZE * 8);
-
     default:
       return 0;
     }
@@ -1258,13 +1260,13 @@ reverseLink (sym_link * type)
 void
 addSymChain (symbol ** symHead)
 {
-  symbol *sym = *symHead;
+  symbol *sym;
   symbol *csym = NULL;
   symbol **symPtrPtr;
   int error = 0;
   int elemsFromIval = 0;
 
-  for (; sym != NULL; sym = sym->next)
+  for (sym = *symHead; sym != NULL; sym = sym->next)
     {
       changePointer (sym->type);
       checkTypeSanity (sym->etype, sym->name);
@@ -1807,7 +1809,7 @@ checkSClass (symbol * sym, int isProto)
       t = sym->type;
       while (t && t->next != sym->etype)
         t = t->next;
-      if (t->next != sym->etype || !IS_FUNC (t))
+      if (!t || t->next != sym->etype || !IS_FUNC (t))
         {
           werror (E_BITVAR_STORAGE, sym->name);
           SPEC_SCLS (sym->etype) = S_FIXED;
@@ -1856,8 +1858,8 @@ checkSClass (symbol * sym, int isProto)
   /* arrays & pointers cannot be defined for bits   */
   /* SBITS or SFRs or BIT                           */
   if ((IS_ARRAY (sym->type) || IS_PTR (sym->type)) &&
-      (SPEC_NOUN (sym->etype) == V_BIT ||
-       SPEC_NOUN (sym->etype) == V_SBIT || SPEC_NOUN (sym->etype) == V_BITFIELD || SPEC_NOUN (sym->etype) == V_BBITFIELD ||
+      (SPEC_NOUN (sym->etype) == V_BIT      || SPEC_NOUN (sym->etype) == V_SBIT      ||
+       SPEC_NOUN (sym->etype) == V_BITFIELD || SPEC_NOUN (sym->etype) == V_BBITFIELD ||
        SPEC_SCLS (sym->etype) == S_SFR))
     {
       /* find out if this is the return type of a function */
@@ -1981,7 +1983,7 @@ cleanUpBlock (bucket ** table, int block)
 }
 
 /*------------------------------------------------------------------*/
-/* cleanUpLevel - cleansup the symbol table specified for all the   */
+/* cleanUpLevel - cleans up the symbol table specified for all the  */
 /*                symbols in the given level                        */
 /*------------------------------------------------------------------*/
 void
@@ -2150,6 +2152,16 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
   else if (IS_FLOAT (etype1) && IS_FIXED16X16 (etype2))
     rType = newFloatLink ();
 
+  /* if only one of them is a bool variable then the other one prevails */
+  else if (IS_BOOLEAN (etype1) && !IS_BOOLEAN (etype2))
+    {
+      rType = copyLinkChain (type2);
+    }
+  else if (IS_BOOLEAN (etype2) && !IS_BOOLEAN (etype1))
+    {
+      rType = copyLinkChain (type1);
+    }
+
   /* if both are bitvars choose the larger one */
   else if (IS_BITVAR (etype1) && IS_BITVAR (etype2))
     rType = SPEC_BLEN (etype1) >= SPEC_BLEN (etype2) ? copyLinkChain (type1) : copyLinkChain (type2);
@@ -2169,7 +2181,8 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
       if (getSize (etype2) > 1)
         SPEC_NOUN (getSpec (rType)) = V_INT;
     }
-  else if (getSize (type1) > getSize (type2))
+
+  else if (bitsForType (type1) > bitsForType (type2))
     rType = copyLinkChain (type1);
   else
     rType = copyLinkChain (type2);
@@ -2181,7 +2194,10 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
 
   /* if result is a literal then make not so */
   if (IS_LITERAL (reType))
-    SPEC_SCLS (reType) = S_REGISTER;
+    {
+      SPEC_SCLS (reType) = S_REGISTER;
+      SPEC_CONST (reType) = 0;
+    }
 
   switch (resultType)
     {
@@ -2189,7 +2205,7 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
       if (TARGET_HC08_LIKE)
         break;
       //fallthrough
-    case RESULT_TYPE_BIT:
+    case RESULT_TYPE_BOOL:
       if (op == ':')
         {
           SPEC_NOUN (reType) = V_BIT;
@@ -2208,6 +2224,7 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
     case RESULT_TYPE_INT:
     case RESULT_TYPE_NONE:
     case RESULT_TYPE_OTHER:
+    case RESULT_TYPE_GPTR:
       if (!IS_SPEC (rType))
         {
           return rType;
@@ -2233,25 +2250,11 @@ computeType (sym_link * type1, sym_link * type2, RESULT_TYPE resultType, int op)
           /* promotion of some special cases */
           switch (op)
             {
-            case ':':
-              /* mcs51, xa51 and ds390 do not really support _Bool yet */
-              if (TARGET_IS_MCS51 || TARGET_IS_XA51 || TARGET_IS_DS390)
-                break;
-              /* Avoid unnecessary cast to _Bool if both operands are _Bool */
-              if ((IS_BOOL (etype1) || (IS_LITERAL (etype1) &&
-                                        (floatFromVal (valFromType (etype1)) == 1.0 ||
-                                         floatFromVal (valFromType (etype1)) == 0.0))) &&
-                  (IS_BOOL (etype2) || (IS_LITERAL (etype2) &&
-                                        (floatFromVal (valFromType (etype2)) == 1.0 ||
-                                         floatFromVal (valFromType (etype2)) == 0.0))))
-                {
-                  SPEC_NOUN (reType) = V_BOOL;
-                }
-              break;
             case '|':
             case '^':
               return computeTypeOr (etype1, etype2, reType);
             case '&':
+            case BITWISEAND:
               if (SPEC_USIGN (etype1) != SPEC_USIGN (etype2))
                 {
                   SPEC_USIGN (reType) = 1;
@@ -2433,7 +2436,7 @@ comparePtrType (sym_link * dest, sym_link * src, bool bMustCast)
   if (res == 1)
     return bMustCast ? -1 : 1;
   else if (res == -2)
-    return -2;
+    return bMustCast ? -1 : -2;
   else
     return 0;
 }
@@ -2740,6 +2743,34 @@ compareTypeExact (sym_link * dest, sym_link * src, int level)
 #endif
       return 0;
     }
+
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+/* compareTypeExact - will do type check return 1 if representation is same. */
+/* Useful for redundancy elimination.                                        */
+/*---------------------------------------------------------------------------*/
+int
+compareTypeInexact (sym_link *dest, sym_link *src)
+{
+  if (!dest && !src)
+    return 1;
+
+  if (dest && !src)
+    return 0;
+
+  if (src && !dest)
+    return 0;
+
+  if (IS_BITFIELD (dest) != IS_BITFIELD (src))
+    return 0;
+
+  if (IS_BITFIELD (dest) && IS_BITFIELD (src) && (SPEC_BLEN (dest) != SPEC_BLEN (src) || SPEC_BSTR (dest) != SPEC_BSTR (src)))
+    return 0;
+
+  if (getSize (dest) != getSize (src))
+    return 0;
 
   return 1;
 }
@@ -3365,7 +3396,7 @@ dbuf_printTypeChain (sym_link * start, struct dbuf_s *dbuf)
             case ARRAY:
               if (DCL_ELEM (type))
                 {
-                  dbuf_printf (dbuf, "[%ud]", (unsigned int) DCL_ELEM (type));
+                  dbuf_printf (dbuf, "[%u]", (unsigned int) DCL_ELEM (type));
                 }
               else
                 {
@@ -3834,6 +3865,7 @@ _mangleFunctionName (const char *in)
 /*                      'v' - void                                 */
 /*                      '*' - pointer - default (GPOINTER)         */
 /* modifiers -          'u' - unsigned                             */
+/*                      'C' - const                                */
 /* pointer modifiers -  'g' - generic                              */
 /*                      'x' - xdata                                */
 /*                      'p' - code                                 */
@@ -3848,12 +3880,16 @@ typeFromStr (const char *s)
 {
   sym_link *r = newLink (DECLARATOR);
   int usign = 0;
+  int constant = 0;
 
   do
     {
       sym_link *nr;
       switch (*s)
         {
+        case 'C':
+          constant = 1;
+          break;
         case 'u':
           usign = 1;
           s++;
@@ -3938,6 +3974,11 @@ typeFromStr (const char *s)
         {
           SPEC_USIGN (r) = 1;
           usign = 0;
+        }
+      if (IS_SPEC (r) && constant)
+        {
+          SPEC_CONST (r) = 1;
+          constant = 0;
         }
       s++;
     }
