@@ -64,7 +64,7 @@ static class cl_uc_error_registry uc_error_registry;
  * Clock counter
  */
 
-cl_ticker::cl_ticker(int adir, int in_isr, char *aname)
+cl_ticker::cl_ticker(int adir, int in_isr, const char *aname)
 {
   options= TICK_RUN;
   if (in_isr)
@@ -94,7 +94,7 @@ cl_ticker::get_rtime(double xtal)
 }
 
 void
-cl_ticker::dump(int nr, double xtal, class cl_console *con)
+cl_ticker::dump(int nr, double xtal, class cl_console_base *con)
 {
   con->dd_printf("timer #%d(\"%s\") %s%s: %g sec (%lu clks)\n",
 		 nr, get_name("unnamed"),
@@ -1049,7 +1049,7 @@ cl_uc::disass(t_addr addr, const char *sep)
 }
 
 void
-cl_uc::print_disass(t_addr addr, class cl_console *con)
+cl_uc::print_disass(t_addr addr, class cl_console_base *con)
 {
   const char *dis;
   class cl_brk *b;
@@ -1087,7 +1087,7 @@ cl_uc::print_disass(t_addr addr, class cl_console *con)
 }
 
 void
-cl_uc::print_regs(class cl_console *con)
+cl_uc::print_regs(class cl_console_base *con)
 {
   con->dd_printf("No registers\n");
 }
@@ -1302,7 +1302,7 @@ void
 cl_uc::check_errors(void)
 {
   int i;
-  class cl_commander *c= sim->app->get_commander();
+  class cl_commander_base *c= sim->app->get_commander();
   bool must_stop= DD_FALSE;
 
   if (c)
@@ -1316,7 +1316,7 @@ cl_uc::check_errors(void)
 	  must_stop= must_stop || (error->get_type() & err_stop);
 	  if (error->inst)
 	    {
-	      class cl_console *con;
+	      class cl_console_base *con;
 	      con= c->actual_console;
 	      if (!con)
 		con= c->frozen_console;
@@ -1414,7 +1414,7 @@ cl_uc::get_counter(int nr)
 }
 
 class cl_ticker *
-cl_uc::get_counter(char *nam)
+cl_uc::get_counter(const char *nam)
 {
   int i;
 
@@ -1440,7 +1440,7 @@ cl_uc::add_counter(class cl_ticker *ticker, int nr)
 }
 
 void
-cl_uc::add_counter(class cl_ticker *ticker, char */*nam*/)
+cl_uc::add_counter(class cl_ticker *ticker, const char */*nam*/)
 {
   int i;
 
@@ -1471,7 +1471,7 @@ cl_uc::del_counter(int nr)
 }
 
 void
-cl_uc::del_counter(char *nam)
+cl_uc::del_counter(const char *nam)
 {
   int i;
 
@@ -1540,15 +1540,22 @@ cl_uc::fetch(t_mem *code)
 int
 cl_uc::do_inst(int step)
 {
+  TYPE_UWORD  PCsave;
   int res= resGO;
 
   if (step < 0)
     step= 1;
   while (step-- &&
-	 res == resGO)
+         res == resGO)
     {
       pre_inst();
+      PCsave = PC;
       res= exec_inst();
+
+      if (res == resINV_INST)
+	/* backup to start of instruction */
+	PC = PCsave;
+      
       post_inst();
     }
   if (res != resGO)
@@ -1872,20 +1879,20 @@ cl_error_unknown_code::cl_error_unknown_code(class cl_uc *the_uc)
 }
 
 void
-cl_error_unknown_code::print(class cl_commander *c)
+cl_error_unknown_code::print(class cl_commander_base *c)
 {
-  FILE *f= c->get_out();
-  cmd_fprintf(f, "%s: unknown instruction code at ", get_type_name());
+  //FILE *f= c->get_out();
+  /*cmd_fprintf(f,*/c->dd_printf("%s: unknown instruction code at ", get_type_name());
   if (uc->rom)
     {
-      cmd_fprintf(f, uc->rom->addr_format, PC);
-      cmd_fprintf(f, " (");
-      cmd_fprintf(f, uc->rom->data_format, uc->rom->get(PC));
-      cmd_fprintf(f, ")");
+      /*cmd_fprintf(f,*/c->dd_printf(uc->rom->addr_format, PC);
+      /*cmd_fprintf(f,*/c->dd_printf(" (");
+      /*cmd_fprintf(f,*/c->dd_printf(uc->rom->data_format, uc->rom->get(PC));
+      /*cmd_fprintf(f,*/c->dd_printf(")");
     }
   else
-    cmd_fprintf(f, "0x%06x", PC);
-  cmd_fprintf(f, "\n");
+    /*cmd_fprintf(f,*/c->dd_printf("0x%06x", PC);
+  /*cmd_fprintf(f,*/c->dd_printf("\n");
 }
 
 

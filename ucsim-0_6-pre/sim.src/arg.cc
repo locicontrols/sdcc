@@ -55,7 +55,7 @@ cl_arg::cl_arg(long lv):
   s_value= 0;
 }
 
-cl_arg::cl_arg(char *sv):
+cl_arg::cl_arg(const char *sv):
   cl_base()
 {
   s_value= sv?strdup(sv):0;
@@ -78,7 +78,7 @@ cl_arg::cl_arg(void *pv):
 cl_arg::~cl_arg(void)
 {
   if (s_value)
-    free(s_value);
+    free((void*)s_value);
 }
 
 
@@ -151,7 +151,7 @@ cl_cmd_arg::as_data(void)
 bool
 cl_cmd_arg::as_memory(class cl_uc *uc)
 {
-  value.memory.memory= uc->memory(s_value);
+  value.memory.memory= uc->memory(get_svalue());
   value.memory.address_space= 0;
   value.memory.memchip= 0;
   if (value.memory.memory)
@@ -243,8 +243,8 @@ cl_cmd_int_arg::as_string(void)
 
 /* Symbol */
 
-cl_cmd_sym_arg::cl_cmd_sym_arg(/*class cl_uc *iuc,*/ char *sym):
-  cl_cmd_arg(/*iuc,*/ sym)
+cl_cmd_sym_arg::cl_cmd_sym_arg(const char *sym):
+  cl_cmd_arg(sym)
 {}
 
 bool
@@ -323,8 +323,8 @@ cl_cmd_sym_arg::as_hw(class cl_uc *uc)
 
 /* String */
 
-cl_cmd_str_arg::cl_cmd_str_arg(/*class cl_uc *iuc,*/ char *str):
-  cl_cmd_arg(/*iuc,*/ str)
+cl_cmd_str_arg::cl_cmd_str_arg(const char *str):
+  cl_cmd_arg(str)
 {
 }
 

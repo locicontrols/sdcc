@@ -28,7 +28,6 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA
 #include "ddconfig.h"
 
 #include "cmdlexcl.h"
-#include "cmdpars.h"
 
 // prj
 #include "i_string.h"
@@ -210,7 +209,7 @@ COMMAND_DO_WORK_SIM(cl_next_cmd)
 COMMAND_DO_WORK_APP(cl_help_cmd)
 {
   class cl_sim *sim;
-  class cl_commander *commander;
+  class cl_commander_base *commander;
   class cl_cmdset *cmdset= 0;
   int i;
   class cl_cmd_arg *parm= cmdline->param(0);
@@ -341,7 +340,7 @@ COMMAND_DO_WORK_APP(cl_help_cmd)
 bool
 cl_help_cmd::do_set(class cl_cmdline *cmdline, int pari,
 		    class cl_cmdset *cmdset,
-		    class cl_console *con)
+		    class cl_console_base *con)
 {
   int i;
   for (i= 0; i < cmdset->count; i++)
@@ -422,8 +421,8 @@ COMMAND_DO_WORK_APP(cl_exec_cmd)
   else
     con->dd_printf("%s\n", short_help?short_help:"Error: wrong syntax\n");
 
-  class cl_commander *c= app->get_commander();
-  class cl_console *cons= con->clone_for_exec(fn);
+  class cl_commander_base *c= app->get_commander();
+  class cl_console_base *cons= con->clone_for_exec(fn);
   if (cons)
     {
       cons->flags|= CONS_NOWELCOME;
@@ -450,13 +449,9 @@ COMMAND_DO_WORK_APP(cl_expression_cmd)
   //con->dd_printf("\"%s\"\n", s);
   i= strspn(s, "abcdefghijklmnopqrstuvwxyz");
   s+= i;
-  //con->dd_printf("\"%s\"\n", s);
-  class YY_cl_ucsim_parser_CLASS *pars;
-  class cl_ucsim_lexer *lexer;
-  lexer= new cl_ucsim_lexer(s);
-  pars= new YY_cl_ucsim_parser_CLASS(lexer);
-  pars->yyparse();
-  delete pars;
+  uc_yy_set_string_to_parse(s);
+  yyparse();
+  uc_yy_free_string_to_parse();
   return(DD_FALSE);
 }
 

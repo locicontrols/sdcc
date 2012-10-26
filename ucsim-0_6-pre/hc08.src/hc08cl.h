@@ -44,7 +44,7 @@ public:
   class cl_memory *rom;
   struct t_regs regs;
 public:
-  cl_hc08(class cl_sim *asim);
+  cl_hc08(int Itype, int Itech, class cl_sim *asim);
   virtual int init(void);
   virtual char *id_string(void);
 
@@ -57,7 +57,7 @@ public:
   virtual int inst_branch(t_addr addr);
   virtual int longest_inst(void);
   virtual const char *disass(t_addr addr, const char *sep);
-  virtual void print_regs(class cl_console *con);
+  virtual void print_regs(class cl_console_base *con);
 
   virtual int exec_inst(void);
 
